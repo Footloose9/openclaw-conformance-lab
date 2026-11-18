@@ -25,10 +25,15 @@ const expectedRedNames = knownNew.every((name) =>
 const namedCasesPreserved = redCases.length === greenCases.length &&
   redCases.map((v) => v.name).sort().join("\n") ===
     greenCases.map((v) => v.name).sort().join("\n");
-const redGate = red.success === false && red.numTotalTestSuites === 1 &&
+const testPath = "src/agents/prepared-model-runtime.publication-events.test.ts";
+const oneRealTestFileInBoth = [red, green].every((report) =>
+  report.numTotalTestSuites >= 1 && report.testResults?.length === 1 &&
+  report.testResults[0].name.replaceAll("\\", "/").endsWith(testPath)
+);
+const redGate = red.success === false && oneRealTestFileInBoth &&
   red.numTotalTests === 6 && red.numPassedTests === 4 &&
   red.numFailedTests === 2 && redFailed.length === 2 && expectedRedNames;
-const greenGate = green.success === true && green.numTotalTestSuites === 1 &&
+const greenGate = green.success === true && oneRealTestFileInBoth &&
   green.numTotalTests === 6 && green.numPassedTests === 6 &&
   green.numFailedTests === 0 && greenPassed.length === 6 &&
   namedCasesPreserved;
