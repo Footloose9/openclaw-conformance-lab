@@ -1,0 +1,410 @@
+diff --git a/src/acp/model-support.ts b/src/acp/model-support.ts
+index 35a426f..895b6b9 100644
+--- a/src/acp/model-support.ts
++++ b/src/acp/model-support.ts
+@@ -149,6 +149,18 @@ export function resolveRequestedModelId(params: {
+   return candidates.length === 1 ? candidates[0] : params.requestedModel;
+ }
+ 
++/** CLI argument intent is distinct from opaque embedded/API request values. */
++export function normalizeCliConfigOptionValue(params: {
++  configId: string;
++  value: string;
++  models: SessionModelState | undefined;
++  cliModelInput?: true;
++}): string {
++  return params.cliModelInput === true && params.models?.configId === params.configId
++    ? params.value.trim()
++    : params.value;
++}
++
+ export function resolveRequestedConfigOption(params: {
+   configId: string;
+   value: string;
+diff --git a/src/cli/command-handlers.ts b/src/cli/command-handlers.ts
+index 12fcb0f..345df89 100644
+--- a/src/cli/command-handlers.ts
++++ b/src/cli/command-handlers.ts
+@@ -552,7 +552,7 @@ export async function handleSetConfigOption(
+   const globalFlags = resolveGlobalFlags(command, config);
+   const agent = resolveAgentInvocation(explicitAgentName, globalFlags, config);
+   if (configId === "model") {
+-    await handleSetModel(explicitAgentName, value, flags, command, config);
++    await handleSetModel(explicitAgentName, value.trim(), flags, command, config);
+     return;
+   }
+   const resolvedConfigId = resolveCompatibleConfigId(agent, configId);
+@@ -568,6 +568,7 @@ export async function handleSetConfigOption(
+     sessionId: record.acpxRecordId,
+     configId: resolvedConfigId,
+     value,
++    cliModelInput: true,
+   });
+ 
+   if (globalFlags.verbose && result.loadError) {
+diff --git a/src/cli/command-registration.ts b/src/cli/command-registration.ts
+index 46d4114..d4fcc62 100644
+--- a/src/cli/command-registration.ts
++++ b/src/cli/command-registration.ts
+@@ -27,6 +27,7 @@ import {
+   addSessionNameOption,
+   addSessionOption,
+   parseDaysOlderThan,
++  parseNonBlankOpaqueValue,
+   parseNonEmptyValue,
+   parsePruneBeforeDate,
+   parseSessionName,
+@@ -278,7 +279,7 @@ export function registerSharedAgentSubcommands(
+       parseNonEmptyValue("Config option key", value),
+     )
+     .argument("<value>", "Config option value", (value: string) =>
+-      parseNonEmptyValue("Config option value", value),
++      parseNonBlankOpaqueValue("Config option value", value),
+     );
+   addSessionNameOption(setConfigCommand);
+   setConfigCommand.action(async function (
+diff --git a/src/cli/flags.ts b/src/cli/flags.ts
+index 54742a6..fe8e43b 100644
+--- a/src/cli/flags.ts
++++ b/src/cli/flags.ts
+@@ -188,6 +188,13 @@ export function parseSessionName(value: string): string {
+   return trimmed;
+ }
+ 
++export function parseNonBlankOpaqueValue(label: string, value: string): string {
++  if (value.trim().length === 0) {
++    throw new InvalidArgumentError(`${label} must not be empty`);
++  }
++  return value;
++}
++
+ export function parseNonEmptyValue(label: string, value: string): string {
+   const trimmed = value.trim();
+   if (trimmed.length === 0) {
+diff --git a/src/session/execution/contracts.ts b/src/session/execution/contracts.ts
+index 9a49a3c..c24cec4 100644
+--- a/src/session/execution/contracts.ts
++++ b/src/session/execution/contracts.ts
+@@ -146,6 +146,7 @@ export type SessionCancelResult = {
+ /** Identifies a session control request that only a running queue owner serves. */
+ export type SessionControlOwnerOptions = {
+   sessionId: string;
++  cliModelInput?: true;
+   timeoutMs?: number;
+   verbose?: boolean;
+   /**
+@@ -169,6 +170,7 @@ export type SessionSetConfigOptionOptions = {
+   sessionId: string;
+   configId: string;
+   value: string;
++  cliModelInput?: true;
+ } & SessionConnectionOptions;
+ 
+ export type SessionCreateWithClientResult = {
+diff --git a/src/session/execution/owned-controls.ts b/src/session/execution/owned-controls.ts
+index 87e7ae6..dd8b824 100644
+--- a/src/session/execution/owned-controls.ts
++++ b/src/session/execution/owned-controls.ts
+@@ -1,5 +1,9 @@
+ import type { AcpClient } from "../../acp/client.js";
+-import { resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
++import {
++  normalizeCliConfigOptionValue,
++  resolveRequestedConfigOption,
++  resolveRequestedModelId,
++} from "../../acp/model-support.js";
+ import type { AcpControlAuthority } from "../../async-control.js";
+ import { applyLifecycleSnapshotToRecord } from "../../runtime/engine/lifecycle.js";
+ import { connectAndLoadSession } from "../../runtime/engine/reconnect.js";
+@@ -89,8 +93,14 @@ export function createOwnedSessionControls(options: OwnedControlOptions): QueueO
+         deadline,
+       );
+     },
+-    setSessionConfigOption: async (configId, value, deadline) => {
++    setSessionConfigOption: async (configId, rawValue, deadline, cliModelInput) => {
+       const models = advertisedModelState(options.record.acpx);
++      const value = normalizeCliConfigOptionValue({
++        configId,
++        value: rawValue,
++        models,
++        cliModelInput,
++      });
+       const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
+         configId,
+         value,
+diff --git a/src/session/execution/prompt-runner.ts b/src/session/execution/prompt-runner.ts
+index b4b7780..ee24dde 100644
+--- a/src/session/execution/prompt-runner.ts
++++ b/src/session/execution/prompt-runner.ts
+@@ -1,4 +1,8 @@
+-import { resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
++import {
++  normalizeCliConfigOptionValue,
++  resolveRequestedConfigOption,
++  resolveRequestedModelId,
++} from "../../acp/model-support.js";
+ import { TimeoutError, withTimeout } from "../../async-control.js";
+ import {
+   withConnectedSession,
+@@ -33,6 +37,7 @@ export type RunSessionSetModeDirectOptions = SessionControlConnectionOptions & {
+ export type RunSessionSetConfigOptionDirectOptions = SessionControlConnectionOptions & {
+   configId: string;
+   value: string;
++  cliModelInput?: true;
+ };
+ 
+ export type RunSessionSetModelDirectOptions = SessionControlConnectionOptions & {
+@@ -155,20 +160,26 @@ export async function runSessionSetConfigOptionDirect(
+       { ...options, replacingConfigOption: { key: options.configId } },
+       async ({ client, sessionId, record }) => {
+         const models = advertisedModelState(record.acpx);
+-        const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
++        const value = normalizeCliConfigOptionValue({
+           configId: options.configId,
+           value: options.value,
+           models,
++          cliModelInput: options.cliModelInput,
++        });
++        const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
++          configId: options.configId,
++          value,
++          models,
+           agentCommand: record.agentCommand,
+         });
+         const response = await withTimeout(
+-          client.setSessionConfigOption(sessionId, options.configId, options.value, models),
++          client.setSessionConfigOption(sessionId, options.configId, value, models),
+           options.timeoutMs,
+         );
+         record.acpx = applyConfigOptionSelection(
+           record.acpx,
+           options.configId,
+-          options.value,
++          value,
+           response,
+           modelConfigId,
+           resolvedValue,
+diff --git a/src/session/execution/queue-owner-runtime.ts b/src/session/execution/queue-owner-runtime.ts
+index adf2bf1..aca785c 100644
+--- a/src/session/execution/queue-owner-runtime.ts
++++ b/src/session/execution/queue-owner-runtime.ts
+@@ -516,9 +516,15 @@ async function runQueueOwnerRuntime(
+             timeoutMs,
+             { key: "model" },
+           ),
+-        setSessionConfigOption: async (configId: string, value: string, timeoutMs?: number) => {
++        setSessionConfigOption: async (
++          configId: string,
++          value: string,
++          timeoutMs?: number,
++          cliModelInput?: true,
++        ) => {
+           return await controls.run(
+-            (context, deadline) => context.setSessionConfigOption(configId, value, deadline),
++            (context, deadline) =>
++              context.setSessionConfigOption(configId, value, deadline, cliModelInput),
+             timeoutMs,
+             { key: configId },
+           );
+diff --git a/src/session/execution/session-control.ts b/src/session/execution/session-control.ts
+index 162e494..9385aaa 100644
+--- a/src/session/execution/session-control.ts
++++ b/src/session/execution/session-control.ts
+@@ -1,7 +1,11 @@
+ import fs from "node:fs/promises";
+ import path from "node:path";
+ import { runTimedExecFile, splitCommandLine } from "../../acp/client-process.js";
+-import { resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
++import {
++  normalizeCliConfigOptionValue,
++  resolveRequestedConfigOption,
++  resolveRequestedModelId,
++} from "../../acp/model-support.js";
+ import type {
+   SessionRecord,
+   SessionSetConfigOptionResult,
+@@ -157,6 +161,7 @@ export async function setSessionConfigOptionOnOwner(
+     options.timeoutMs,
+     options.verbose,
+     options.assertDispatch,
++    options.cliModelInput,
+   );
+   if (!ownerResponse) {
+     return undefined;
+@@ -164,16 +169,22 @@ export async function setSessionConfigOptionOnOwner(
+   const record = await resolveSessionRecord(options.sessionId);
+   if (!ownerResponse.persistsControlState) {
+     const models = advertisedModelState(record.acpx);
+-    const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
++    const value = normalizeCliConfigOptionValue({
+       configId: options.configId,
+       value: options.value,
+       models,
++      cliModelInput: options.cliModelInput,
++    });
++    const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
++      configId: options.configId,
++      value,
++      models,
+       agentCommand: record.agentCommand,
+     });
+     record.acpx = applyConfigOptionSelection(
+       record.acpx,
+       options.configId,
+-      options.value,
++      value,
+       ownerResponse.value,
+       modelConfigId,
+       resolvedValue,
+diff --git a/src/session/queue/control-admission.ts b/src/session/queue/control-admission.ts
+index 167cb1f..86da564 100644
+--- a/src/session/queue/control-admission.ts
++++ b/src/session/queue/control-admission.ts
+@@ -97,6 +97,7 @@ export type QueueOwnerControlMethods = {
+     configId: string,
+     value: string,
+     deadline?: QueueControlDeadline,
++    cliModelInput?: true,
+   ) => Promise<SetSessionConfigOptionResponse>;
+ };
+ 
+diff --git a/src/session/queue/ipc-server.ts b/src/session/queue/ipc-server.ts
+index 3df5a3c..60350e5 100644
+--- a/src/session/queue/ipc-server.ts
++++ b/src/session/queue/ipc-server.ts
+@@ -104,6 +104,7 @@ export type QueueOwnerControlHandlers = {
+     configId: string,
+     value: string,
+     timeoutMs?: number,
++    cliModelInput?: true,
+   ) => Promise<SetSessionConfigOptionResponse>;
+ };
+ 
+@@ -534,7 +535,7 @@ export class SessionQueueOwner {
+       });
+       return true;
+     }
+-    if (request.type === "set_config_option") {
++    if (request.type === "set_config_option" || request.type === "set_cli_config_option") {
+       this.handleControlRequest({
+         socket,
+         requestId: request.requestId,
+@@ -545,6 +546,7 @@ export class SessionQueueOwner {
+             request.configId,
+             request.value,
+             request.timeoutMs,
++            request.type === "set_cli_config_option" ? true : undefined,
+           ),
+         }),
+       });
+diff --git a/src/session/queue/ipc.ts b/src/session/queue/ipc.ts
+index e933f96..3abb2bd 100644
+--- a/src/session/queue/ipc.ts
++++ b/src/session/queue/ipc.ts
+@@ -32,6 +32,7 @@ import {
+   type QueueOwnerSetModeResultMessage,
+   type QueueRequest,
+   type QueueSetConfigOptionRequest,
++  type QueueSetCliConfigOptionRequest,
+   type QueueSetModelRequest,
+   type QueueSetModeRequest,
+   type QueueSubmitRequest,
+@@ -634,9 +635,10 @@ async function submitSetConfigOptionToQueueOwner(
+   value: string,
+   timeoutMs?: number,
+   assertDispatch?: () => void,
++  cliModelInput?: true,
+ ): Promise<SetSessionConfigOptionResponse | undefined> {
+-  const request: QueueSetConfigOptionRequest = {
+-    type: "set_config_option",
++  const request: QueueSetConfigOptionRequest | QueueSetCliConfigOptionRequest = {
++    type: cliModelInput === true ? "set_cli_config_option" : "set_config_option",
+     requestId: randomUUID(),
+     ownerGeneration: owner.ownerGeneration,
+     configId,
+@@ -874,6 +876,7 @@ export async function trySetConfigOptionOnRunningOwner(
+   timeoutMs: number | undefined,
+   verbose: boolean | undefined,
+   assertDispatch?: () => void,
++  cliModelInput?: true,
+ ): Promise<OwnerControlResult<SetSessionConfigOptionResponse> | undefined> {
+   return await tryControlOnRunningOwner({
+     sessionId,
+@@ -883,7 +886,14 @@ export async function trySetConfigOptionOnRunningOwner(
+     submit: (owner) =>
+       withOwnerControlPersistence(
+         owner,
+-        submitSetConfigOptionToQueueOwner(owner, configId, value, timeoutMs, assertDispatch),
++        submitSetConfigOptionToQueueOwner(
++          owner,
++          configId,
++          value,
++          timeoutMs,
++          assertDispatch,
++          cliModelInput,
++        ),
+       ),
+   });
+ }
+diff --git a/src/session/queue/messages.ts b/src/session/queue/messages.ts
+index 54b98c0..46f669b 100644
+--- a/src/session/queue/messages.ts
++++ b/src/session/queue/messages.ts
+@@ -74,6 +74,11 @@ export type QueueSetConfigOptionRequest = {
+   timeoutMs?: number;
+ };
+ 
++/** A distinct control kind prevents old owners from silently dropping CLI model intent. */
++export type QueueSetCliConfigOptionRequest = Omit<QueueSetConfigOptionRequest, "type"> & {
++  type: "set_cli_config_option";
++};
++
+ export type QueueCloseSessionRequest = {
+   type: "close_session";
+   requestId: string;
+@@ -87,6 +92,7 @@ export type QueueRequest =
+   | QueueSetModeRequest
+   | QueueSetModelRequest
+   | QueueSetConfigOptionRequest
++  | QueueSetCliConfigOptionRequest
+   | QueueCloseSessionRequest;
+ 
+ export type QueueOwnerAcceptedMessage = {
+@@ -436,7 +442,9 @@ function parseTypedQueueRequest(
+     case "set_model":
+       return parseStringFieldRequest(request, context, "set_model", "modelId");
+     case "set_config_option":
+-      return parseSetConfigOptionRequest(request, context);
++      return parseSetConfigOptionRequest(request, context, "set_config_option");
++    case "set_cli_config_option":
++      return parseSetConfigOptionRequest(request, context, "set_cli_config_option");
+     default:
+       return null;
+   }
+@@ -568,13 +576,23 @@ function parseStringFieldRequest<TType extends "set_mode" | "set_model">(
+ function parseSetConfigOptionRequest(
+   request: Record<string, unknown>,
+   context: QueueRequestContext,
+-): QueueSetConfigOptionRequest | null {
++  type: QueueSetConfigOptionRequest["type"] | QueueSetCliConfigOptionRequest["type"],
++): QueueSetConfigOptionRequest | QueueSetCliConfigOptionRequest | null {
+   const configId = parseNonEmptyString(request.configId);
+   const value = parseNonEmptyString(request.value);
+-  if (!configId || !value) {
++  if (
++    !configId ||
++    !value ||
++    request.cliModelInput !== undefined
++  ) {
+     return null;
+   }
+-  return { type: "set_config_option", ...context, configId, value };
++  return {
++    type,
++    ...context,
++    configId,
++    value,
++  };
+ }
+ 
+ function parseNonEmptyString(value: unknown): string | null {

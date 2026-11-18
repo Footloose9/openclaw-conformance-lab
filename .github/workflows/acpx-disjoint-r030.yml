@@ -1,0 +1,148 @@
+name: ACPX disjoint CLI queue control compatibility (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acpx-cli-disjoint-r030
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CI: "true"
+      GIT_TERMINAL_PROMPT: "0"
+      NODE_OPTIONS: --max-old-space-size=2048
+    steps:
+      - name: Checkout public conformance lab
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Setup pinned Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          check-latest: false
+
+      - name: Install pinned package manager without lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g --ignore-scripts --no-audit --no-fund pnpm@11.27.1
+          test "$(pnpm --version)" = "11.27.1"
+
+      - name: Fetch exact unmodified ACPX upstream revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth=1 --filter=blob:none --no-checkout https://github.com/openclaw/acpx.git upstream
+          git -C upstream fetch --quiet --depth=1 origin 48c1615057ae43893f80868f81cd3ee0445eb0ae
+          git -C upstream checkout --quiet --detach 48c1615057ae43893f80868f81cd3ee0445eb0ae
+          test "$(git -C upstream rev-parse HEAD)" = "48c1615057ae43893f80868f81cd3ee0445eb0ae"
+          test -z "$(git -C upstream status --porcelain)"
+
+      - name: Verify old-owner negative fixture and source patch identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'CDB7F1843D38E965089BE0DAA34604095846BCF36BE784F7B1354026941529EE  harness/acpx/acpx-old-owner-queue-reject.public.test.ts' | sha256sum -c -
+          echo '95607B5E8E2614B23D64E77EFEA00108F4F23793AB054D5F37A8AC069DF7BF0D  harness/acpx/acpx-cli-model-intent-r030.public.test.ts' | sha256sum -c -
+          echo '6EF2495073C3A0E4136A3DB5BA3D773967CC8AF0E83D66459F8A8379D26A9734  patches/acpx-cli-model-intent-r030.patch' | sha256sum -c -
+          echo 'D7DBE75447B752C2CC76397AB51F2675D972017EFBC8D9FE9F8DC5D685E5BD09  harness/acpx/acpx-cli-opaque-set.public-regression.test.ts' | sha256sum -c -
+          echo 'CCCE4F80F6550CE3CD83CA676B87EA1618B7F710BF954F390195A724C2950D86  harness/acpx/acpx-model-control-contract.public.test.ts' | sha256sum -c -
+          cp harness/acpx/acpx-old-owner-queue-reject.public.test.ts upstream/test/
+          test "$(git -C upstream status --porcelain)" = "?? test/acpx-old-owner-queue-reject.public.test.ts"
+
+      - name: Install upstream frozen dependency graph without lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream install --frozen-lockfile --ignore-scripts --reporter append-only
+          git -C upstream diff --exit-code -- pnpm-lock.yaml
+
+      - name: Build unmodified upstream runtime and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream run build
+          pnpm -C upstream run build:test
+          test -s upstream/dist-test/test/acpx-old-owner-queue-reject.public.test.js
+
+      - name: Prove original old owner rejects the new queue request type
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p harness/out
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-old-owner-queue-reject.public.test.js) > harness/out/acpx-old-owner.tap 2>&1 || { tail -n 80 harness/out/acpx-old-owner.tap; exit 1; }
+          tail -n 18 harness/out/acpx-old-owner.tap
+          test -z "$(git -C upstream diff --name-only)"
+
+      - name: Apply reviewed disjoint-type source candidate and remaining tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C upstream apply --check ../patches/acpx-cli-model-intent-r030.patch
+          git -C upstream apply ../patches/acpx-cli-model-intent-r030.patch
+          git -C upstream diff --check
+          test "$(git -C upstream diff --name-only | wc -l)" -eq 13
+          cp harness/acpx/acpx-cli-opaque-set.public-regression.test.ts upstream/test/
+          cp harness/acpx/acpx-model-control-contract.public.test.ts upstream/test/
+          cp harness/acpx/acpx-cli-model-intent-r030.public.test.ts upstream/test/
+          test "$(git -C upstream status --porcelain | grep -c '^?? ')" -eq 4
+
+      - name: Rebuild official runtime and tests on candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream run build
+          pnpm -C upstream run build:test
+          test -s upstream/dist-test/test/acpx-cli-model-intent-r030.public.test.js
+
+      - name: Test original regression and model contracts on new source
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-cli-opaque-set.public-regression.test.js) > harness/out/acpx-r027.tap 2>&1 || { tail -n 90 harness/out/acpx-r027.tap; exit 1; }
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-model-control-contract.public.test.js) > harness/out/acpx-r028.tap 2>&1 || { tail -n 90 harness/out/acpx-r028.tap; exit 1; }
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-cli-model-intent-r030.public.test.js) > harness/out/acpx-r030.tap 2>&1 || { tail -n 90 harness/out/acpx-r030.tap; exit 1; }
+          tail -n 10 harness/out/acpx-r027.tap
+          tail -n 10 harness/out/acpx-r028.tap
+          tail -n 10 harness/out/acpx-r030.tap
+
+      - name: Verify 22 exact identities across old and new source
+        run: node harness/scripts/check-acpx-r030.mjs
+
+      - name: Run selected upstream maintained tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && node --test --test-reporter=tap \
+            dist-test/test/cli-flags.test.js \
+            dist-test/test/opaque-config.test.js \
+            dist-test/test/runtime-model-controls.test.js \
+            dist-test/test/session-mode-preference.test.js) > harness/out/acpx-maintained-scoped.tap 2>&1 || { tail -n 120 harness/out/acpx-maintained-scoped.tap; exit 1; }
+          tail -n 12 harness/out/acpx-maintained-scoped.tap
+
+      - name: Source TypeScript typecheck
+        run: pnpm -C upstream run typecheck
+
+      - name: Strict source formatting on all changed files
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && git diff --name-only -z | xargs -0 pnpm exec oxfmt --check)
+
+      - name: Upload scoped source evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: acpx-disjoint-r030-evidence
+          path: harness/out/*
+          if-no-files-found: warn
+          retention-days: 7
