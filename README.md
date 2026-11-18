@@ -27,3 +27,5 @@ The additional workflow at `.github/workflows/openclaw-upstream-cloud-validation
 The gates have independent outcomes. A successful dependency preflight is not TypeScript proof; a scoped typecheck is not a whole-repository typecheck; a passing Gateway test is not production or device validation. The original narrow six-test reproduction remains separately preserved. No automatic schedules or paid runners are configured.
 
 See [VALIDATION_RESULTS.md](VALIDATION_RESULTS.md) for exact run IDs, counts, upstream commit/patch identities, and evidence limitations.
+
+See [ACPX #1005 CLI value regression evidence](ACPX_1005_VALIDATION.md) for the separate source-bound ACPX parser test and its strict baseline acceptance.
