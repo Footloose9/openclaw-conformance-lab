@@ -74,6 +74,13 @@ jobs:
           git -C upstream diff --exit-code -- pnpm-lock.yaml
           test -x upstream/node_modules/.bin/tsc
 
+      - name: Build official upstream runtime required by test imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream run build
+          test -s upstream/dist/runtime.js
+
       - name: Build official Node test sources
         shell: bash
         run: |
