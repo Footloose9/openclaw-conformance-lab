@@ -54,7 +54,7 @@ jobs:
           echo 'D7DBE75447B752C2CC76397AB51F2675D972017EFBC8D9FE9F8DC5D685E5BD09  harness/acpx/acpx-cli-opaque-set.public-regression.test.ts' | sha256sum -c -
           echo 'CCCE4F80F6550CE3CD83CA676B87EA1618B7F710BF954F390195A724C2950D86  harness/acpx/acpx-model-control-contract.public.test.ts' | sha256sum -c -
           echo '3DD018949389862554E03A435FA39593149A57C408360B228B855EBC58E35CAC  harness/acpx/acpx-cli-model-intent.public.test.ts' | sha256sum -c -
-          echo 'DFF7390CF7B85813D83D66A38D0F7AC1DDD0A96F8F3BF909DED51B274A6AC8E2  patches/acpx-cli-model-intent-r029.patch' | sha256sum -c -
+          echo 'ADAE3259F1447A3523864B371D867BE6BE1E9A3AB181EFCB857AF50F5C928D9F  patches/acpx-cli-model-intent-r029.patch' | sha256sum -c -
           cp harness/acpx/acpx-cli-opaque-set.public-regression.test.ts upstream/test/
           cp harness/acpx/acpx-model-control-contract.public.test.ts upstream/test/
           cp harness/acpx/acpx-cli-model-intent.public.test.ts upstream/test/

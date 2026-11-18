@@ -102,17 +102,21 @@ index 9a49a3c..c24cec4 100644
  
  export type SessionCreateWithClientResult = {
 diff --git a/src/session/execution/owned-controls.ts b/src/session/execution/owned-controls.ts
-index 87e7ae6..0979d56 100644
+index 87e7ae6..dd8b824 100644
 --- a/src/session/execution/owned-controls.ts
 +++ b/src/session/execution/owned-controls.ts
-@@ -1,5 +1,5 @@
+@@ -1,5 +1,9 @@
  import type { AcpClient } from "../../acp/client.js";
 -import { resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
-+import { normalizeCliConfigOptionValue, resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
++import {
++  normalizeCliConfigOptionValue,
++  resolveRequestedConfigOption,
++  resolveRequestedModelId,
++} from "../../acp/model-support.js";
  import type { AcpControlAuthority } from "../../async-control.js";
  import { applyLifecycleSnapshotToRecord } from "../../runtime/engine/lifecycle.js";
  import { connectAndLoadSession } from "../../runtime/engine/reconnect.js";
-@@ -89,8 +89,11 @@ export function createOwnedSessionControls(options: OwnedControlOptions): QueueO
+@@ -89,8 +93,14 @@ export function createOwnedSessionControls(options: OwnedControlOptions): QueueO
          deadline,
        );
      },
@@ -120,22 +124,29 @@ index 87e7ae6..0979d56 100644
 +    setSessionConfigOption: async (configId, rawValue, deadline, cliModelInput) => {
        const models = advertisedModelState(options.record.acpx);
 +      const value = normalizeCliConfigOptionValue({
-+        configId, value: rawValue, models, cliModelInput,
++        configId,
++        value: rawValue,
++        models,
++        cliModelInput,
 +      });
        const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
          configId,
          value,
 diff --git a/src/session/execution/prompt-runner.ts b/src/session/execution/prompt-runner.ts
-index b4b7780..a3e9bb1 100644
+index b4b7780..ee24dde 100644
 --- a/src/session/execution/prompt-runner.ts
 +++ b/src/session/execution/prompt-runner.ts
-@@ -1,4 +1,4 @@
+@@ -1,4 +1,8 @@
 -import { resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
-+import { normalizeCliConfigOptionValue, resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
++import {
++  normalizeCliConfigOptionValue,
++  resolveRequestedConfigOption,
++  resolveRequestedModelId,
++} from "../../acp/model-support.js";
  import { TimeoutError, withTimeout } from "../../async-control.js";
  import {
    withConnectedSession,
-@@ -33,6 +33,7 @@ export type RunSessionSetModeDirectOptions = SessionControlConnectionOptions & {
+@@ -33,6 +37,7 @@ export type RunSessionSetModeDirectOptions = SessionControlConnectionOptions & {
  export type RunSessionSetConfigOptionDirectOptions = SessionControlConnectionOptions & {
    configId: string;
    value: string;
@@ -143,18 +154,21 @@ index b4b7780..a3e9bb1 100644
  };
  
  export type RunSessionSetModelDirectOptions = SessionControlConnectionOptions & {
-@@ -155,20 +156,23 @@ export async function runSessionSetConfigOptionDirect(
+@@ -155,20 +160,26 @@ export async function runSessionSetConfigOptionDirect(
        { ...options, replacingConfigOption: { key: options.configId } },
        async ({ client, sessionId, record }) => {
          const models = advertisedModelState(record.acpx);
+-        const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
 +        const value = normalizeCliConfigOptionValue({
-+          configId: options.configId, value: options.value, models, cliModelInput: options.cliModelInput,
-+        });
-         const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
            configId: options.configId,
--          value: options.value,
-+          value,
+           value: options.value,
            models,
++          cliModelInput: options.cliModelInput,
++        });
++        const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
++          configId: options.configId,
++          value,
++          models,
            agentCommand: record.agentCommand,
          });
          const response = await withTimeout(
@@ -171,35 +185,45 @@ index b4b7780..a3e9bb1 100644
            modelConfigId,
            resolvedValue,
 diff --git a/src/session/execution/queue-owner-runtime.ts b/src/session/execution/queue-owner-runtime.ts
-index adf2bf1..0ef8670 100644
+index adf2bf1..aca785c 100644
 --- a/src/session/execution/queue-owner-runtime.ts
 +++ b/src/session/execution/queue-owner-runtime.ts
-@@ -516,9 +516,9 @@ async function runQueueOwnerRuntime(
+@@ -516,9 +516,15 @@ async function runQueueOwnerRuntime(
              timeoutMs,
              { key: "model" },
            ),
 -        setSessionConfigOption: async (configId: string, value: string, timeoutMs?: number) => {
-+        setSessionConfigOption: async (configId: string, value: string, timeoutMs?: number, cliModelInput?: true) => {
++        setSessionConfigOption: async (
++          configId: string,
++          value: string,
++          timeoutMs?: number,
++          cliModelInput?: true,
++        ) => {
            return await controls.run(
 -            (context, deadline) => context.setSessionConfigOption(configId, value, deadline),
-+            (context, deadline) => context.setSessionConfigOption(configId, value, deadline, cliModelInput),
++            (context, deadline) =>
++              context.setSessionConfigOption(configId, value, deadline, cliModelInput),
              timeoutMs,
              { key: configId },
            );
 diff --git a/src/session/execution/session-control.ts b/src/session/execution/session-control.ts
-index 162e494..a68c41b 100644
+index 162e494..9385aaa 100644
 --- a/src/session/execution/session-control.ts
 +++ b/src/session/execution/session-control.ts
-@@ -1,7 +1,7 @@
+@@ -1,7 +1,11 @@
  import fs from "node:fs/promises";
  import path from "node:path";
  import { runTimedExecFile, splitCommandLine } from "../../acp/client-process.js";
 -import { resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
-+import { normalizeCliConfigOptionValue, resolveRequestedConfigOption, resolveRequestedModelId } from "../../acp/model-support.js";
++import {
++  normalizeCliConfigOptionValue,
++  resolveRequestedConfigOption,
++  resolveRequestedModelId,
++} from "../../acp/model-support.js";
  import type {
    SessionRecord,
    SessionSetConfigOptionResult,
-@@ -157,6 +157,7 @@ export async function setSessionConfigOptionOnOwner(
+@@ -157,6 +161,7 @@ export async function setSessionConfigOptionOnOwner(
      options.timeoutMs,
      options.verbose,
      options.assertDispatch,
@@ -207,18 +231,21 @@ index 162e494..a68c41b 100644
    );
    if (!ownerResponse) {
      return undefined;
-@@ -164,16 +165,19 @@ export async function setSessionConfigOptionOnOwner(
+@@ -164,16 +169,22 @@ export async function setSessionConfigOptionOnOwner(
    const record = await resolveSessionRecord(options.sessionId);
    if (!ownerResponse.persistsControlState) {
      const models = advertisedModelState(record.acpx);
+-    const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
 +    const value = normalizeCliConfigOptionValue({
-+      configId: options.configId, value: options.value, models, cliModelInput: options.cliModelInput,
-+    });
-     const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
        configId: options.configId,
--      value: options.value,
-+      value,
+       value: options.value,
        models,
++      cliModelInput: options.cliModelInput,
++    });
++    const { modelConfigId, resolvedValue } = resolveRequestedConfigOption({
++      configId: options.configId,
++      value,
++      models,
        agentCommand: record.agentCommand,
      });
      record.acpx = applyConfigOptionSelection(
@@ -262,7 +289,7 @@ index 3df5a3c..a730ca8 100644
          }),
        });
 diff --git a/src/session/queue/ipc.ts b/src/session/queue/ipc.ts
-index e933f96..2d6930e 100644
+index e933f96..4d8124f 100644
 --- a/src/session/queue/ipc.ts
 +++ b/src/session/queue/ipc.ts
 @@ -634,6 +634,7 @@ async function submitSetConfigOptionToQueueOwner(
@@ -289,17 +316,19 @@ index e933f96..2d6930e 100644
  ): Promise<OwnerControlResult<SetSessionConfigOptionResponse> | undefined> {
    return await tryControlOnRunningOwner({
      sessionId,
-@@ -883,7 +886,7 @@ export async function trySetConfigOptionOnRunningOwner(
+@@ -883,7 +886,9 @@ export async function trySetConfigOptionOnRunningOwner(
      submit: (owner) =>
        withOwnerControlPersistence(
          owner,
 -        submitSetConfigOptionToQueueOwner(owner, configId, value, timeoutMs, assertDispatch),
-+        submitSetConfigOptionToQueueOwner(owner, configId, value, timeoutMs, assertDispatch, cliModelInput),
++        submitSetConfigOptionToQueueOwner(
++          owner, configId, value, timeoutMs, assertDispatch, cliModelInput,
++        ),
        ),
    });
  }
 diff --git a/src/session/queue/messages.ts b/src/session/queue/messages.ts
-index 54b98c0..4116ff3 100644
+index 54b98c0..f950aa3 100644
 --- a/src/session/queue/messages.ts
 +++ b/src/session/queue/messages.ts
 @@ -71,6 +71,7 @@ export type QueueSetConfigOptionRequest = {
@@ -310,17 +339,24 @@ index 54b98c0..4116ff3 100644
    timeoutMs?: number;
  };
  
-@@ -571,10 +572,13 @@ function parseSetConfigOptionRequest(
+@@ -571,10 +572,20 @@ function parseSetConfigOptionRequest(
  ): QueueSetConfigOptionRequest | null {
    const configId = parseNonEmptyString(request.configId);
    const value = parseNonEmptyString(request.value);
 -  if (!configId || !value) {
-+  if (!configId || !value || (request.cliModelInput !== undefined && request.cliModelInput !== true)) {
++  if (
++    !configId ||
++    !value ||
++    (request.cliModelInput !== undefined && request.cliModelInput !== true)
++  ) {
      return null;
    }
 -  return { type: "set_config_option", ...context, configId, value };
 +  return {
-+    type: "set_config_option", ...context, configId, value,
++    type: "set_config_option",
++    ...context,
++    configId,
++    value,
 +    ...(request.cliModelInput === true ? { cliModelInput: true as const } : {}),
 +  };
  }
