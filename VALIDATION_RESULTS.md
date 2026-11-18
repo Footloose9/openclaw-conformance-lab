@@ -25,6 +25,18 @@ The Gateway test is OpenClaw's original `src/gateway/server-methods/models-list.
 
 The Gateway report was independently checked for nonzero discovery and expected test count. GitHub retained the `real-upstream-gateway-evidence` artifact through **2026-11-25 21:24 UTC** (seven days); the GitHub run link and job logs remain primary inspection points after artifact expiration.
 
+## R024 — exact reporter failure-accounting regression on current-source snapshot
+
+A separate manual-only cloud workflow exercised the *actual* upstream `agents-core` Vitest project at pinned commit `d2db7b2267faf4521b3c3a08acd062edd7cbf910`. The normal frozen-lockfile workspace dependency install and upstream runtime build completed, and the two new reporter tests ran first against **unmodified production code**, then against the exact R018 two-file production correction.
+
+- **Baseline:** 6 tests discovered; 4 passed and the 2 new assertions failed as intended. The failures establish that silent background retry work could appear as UI-visible pending status and lose its independent failure scope.
+- **Corrected:** same 6 test identities; **6 passed, 0 failed**.
+- **Exact behavior:** the added tests verify a distinct admitted silent failure despite a prior recorded failure, deduplicate a later duplicate report, and retain the failing provider after a sibling publishes successfully.
+- **GitHub Actions outcome:** [run 44404323885](https://github.com/Footloose9/openclaw-conformance-lab/actions/runs/44404323885) — PASS, including the independent strict case-identity checker. Artifact `reporter-redgreen-evidence`, ID `14473493769`, retention expires 2026-11-25 21:47 UTC.
+- **Prior diagnostic:** [run 44403265499](https://github.com/Footloose9/openclaw-conformance-lab/actions/runs/44403265499) produced the same correct raw test counts, but failed its final verifier because it assumed one Vitest suite per test file. This verifier was corrected without changing the source patch or test assertions.
+
+The direct reporter regression proves **silent-renewal failure accounting**; the separate 3/3 Gateway integration proves **successful background catalog freshness**, not a failed-provider Gateway end-to-end route. Neither run proves the distinct startup / generation-adoption inventory loss reported in upstream issue #194240, which remains under maintainer review.
+
 ## Evidence boundaries
 
 A passing scoped typecheck does **not** equal a whole-repository TypeScript or lint pass. Three actual Gateway integration cases do **not** equal a complete upstream test-suite pass, compatibility across every operating system, a live production Gateway validation, or a deployment. The test fixture uses synthetic local provider endpoints and is not authorized to access real user credentials.
