@@ -53,13 +53,16 @@ jobs:
           set -euo pipefail
           echo 'CDB7F1843D38E965089BE0DAA34604095846BCF36BE784F7B1354026941529EE  harness/acpx/acpx-old-owner-queue-reject.public.test.ts' | sha256sum -c -
           echo '8F4DF413F37111ABADC7ADE352867B2FDB326142D141E03CFA29FF77C114D3EA  harness/acpx/acpx-old-owner-live-wire.public.test.ts' | sha256sum -c -
+          echo 'F1AA66C01F752DD4B7006A6073F18B5536327357EE0B4ACFFA39B836574DA3DD  harness/acpx/acpx-r032-old-executable-owner.public.fixture.ts' | sha256sum -c -
+          echo '3362A07F5A1D573191907B2281DC9A8CB46ADEEEEA9AFB44B7F361DEEF4305E0  harness/acpx/acpx-r032-new-client-old-owner.public.test.ts' | sha256sum -c -
           echo '95607B5E8E2614B23D64E77EFEA00108F4F23793AB054D5F37A8AC069DF7BF0D  harness/acpx/acpx-cli-model-intent-r030.public.test.ts' | sha256sum -c -
           echo '31D4D280E9702F5C3710B44C168093C74ADF886063B44769CDC57A3A22C911C4  patches/acpx-cli-model-intent-r030.patch' | sha256sum -c -
           echo 'D7DBE75447B752C2CC76397AB51F2675D972017EFBC8D9FE9F8DC5D685E5BD09  harness/acpx/acpx-cli-opaque-set.public-regression.test.ts' | sha256sum -c -
           echo 'CCCE4F80F6550CE3CD83CA676B87EA1618B7F710BF954F390195A724C2950D86  harness/acpx/acpx-model-control-contract.public.test.ts' | sha256sum -c -
           cp harness/acpx/acpx-old-owner-queue-reject.public.test.ts upstream/test/
           cp harness/acpx/acpx-old-owner-live-wire.public.test.ts upstream/test/
-          test "$(git -C upstream status --porcelain | grep -c '^?? test/acpx-old-owner-')" -eq 2
+          cp harness/acpx/acpx-r032-old-executable-owner.public.fixture.ts upstream/test/
+          test "$(git -C upstream status --porcelain | grep -c '^?? test/')" -eq 3
 
       - name: Install upstream frozen dependency graph without lifecycle scripts
         shell: bash
@@ -76,6 +79,7 @@ jobs:
           pnpm -C upstream run build:test
           test -s upstream/dist-test/test/acpx-old-owner-queue-reject.public.test.js
           test -s upstream/dist-test/test/acpx-old-owner-live-wire.public.test.js
+          test -s upstream/dist-test/test/acpx-r032-old-executable-owner.public.fixture.js
 
       - name: Prove original old owner rejects the new queue request type
         shell: bash
@@ -97,6 +101,15 @@ jobs:
           grep -Fqx '# cancelled 0' harness/out/acpx-r031-live-old-wire.tap
           tail -n 18 harness/out/acpx-r031-live-old-wire.tap
 
+      - name: Preserve exact old compiled owner modules for mixed-binary test
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e upstream/.r032-old-dist-test
+          cp -a upstream/dist-test upstream/.r032-old-dist-test
+          test -s upstream/.r032-old-dist-test/src/session/queue/ipc.js
+          test -s upstream/.r032-old-dist-test/test/acpx-r032-old-executable-owner.public.fixture.js
+
       - name: Apply reviewed disjoint-type source candidate and remaining tests
         shell: bash
         run: |
@@ -108,7 +121,8 @@ jobs:
           cp harness/acpx/acpx-cli-opaque-set.public-regression.test.ts upstream/test/
           cp harness/acpx/acpx-model-control-contract.public.test.ts upstream/test/
           cp harness/acpx/acpx-cli-model-intent-r030.public.test.ts upstream/test/
-          test "$(git -C upstream status --porcelain | grep -c '^?? ')" -eq 5
+          cp harness/acpx/acpx-r032-new-client-old-owner.public.test.ts upstream/test/
+          test "$(git -C upstream status --porcelain | grep -c '^?? ')" -eq 8
 
       - name: Rebuild official runtime and tests on candidate
         shell: bash
@@ -117,6 +131,7 @@ jobs:
           pnpm -C upstream run build
           pnpm -C upstream run build:test
           test -s upstream/dist-test/test/acpx-cli-model-intent-r030.public.test.js
+          test -s upstream/dist-test/test/acpx-r032-new-client-old-owner.public.test.js
 
       - name: Test original regression and model contracts on new source
         shell: bash
@@ -128,6 +143,17 @@ jobs:
           tail -n 10 harness/out/acpx-r027.tap
           tail -n 10 harness/out/acpx-r028.tap
           tail -n 10 harness/out/acpx-r030.tap
+
+      - name: Test real new client against separate old compiled owner process
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-r032-new-client-old-owner.public.test.js) > harness/out/acpx-r032-mixed-binary.tap 2>&1 || { tail -n 100 harness/out/acpx-r032-mixed-binary.tap; exit 1; }
+          grep -Fqx '# tests 1' harness/out/acpx-r032-mixed-binary.tap
+          grep -Fqx '# pass 1' harness/out/acpx-r032-mixed-binary.tap
+          grep -Fqx '# fail 0' harness/out/acpx-r032-mixed-binary.tap
+          grep -Fqx '# cancelled 0' harness/out/acpx-r032-mixed-binary.tap
+          tail -n 17 harness/out/acpx-r032-mixed-binary.tap
 
       - name: Verify 22 exact identities across old and new source
         run: node harness/scripts/check-acpx-r030.mjs
