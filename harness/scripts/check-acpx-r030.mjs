@@ -64,7 +64,7 @@ const outcomes = expected.map(({file,tap,caseNames}) => {
 });
 const result = {status: outcomes.every(x => x.verified) ? "PASS_R030_SCOPED_SOURCE_COMPATIBILITY" : "HOLD_R030_SOURCE_COMPATIBILITY",
   upstreamPin:"48c1615057ae43893f80868f81cd3ee0445eb0ae",
-  patchSha256:"6EF2495073C3A0E4136A3DB5BA3D773967CC8AF0E83D66459F8A8379D26A9734",
+  patchSha256:"31D4D280E9702F5C3710B44C168093C74ADF886063B44769CDC57A3A22C911C4",
   sourceCases:22, outcomes,
   limitation:"Old-owner evidence is pinned unmodified source parser rejection, not live mixed-version owner socket E2E"};
 writeFileSync("harness/out/acpx-r030-summary.json", JSON.stringify(result,null,2)+"\n");

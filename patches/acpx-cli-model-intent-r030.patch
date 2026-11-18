@@ -347,7 +347,7 @@ index e933f96..3abb2bd 100644
    });
  }
 diff --git a/src/session/queue/messages.ts b/src/session/queue/messages.ts
-index 54b98c0..46f669b 100644
+index 54b98c0..ae4723f 100644
 --- a/src/session/queue/messages.ts
 +++ b/src/session/queue/messages.ts
 @@ -74,6 +74,11 @@ export type QueueSetConfigOptionRequest = {
@@ -381,7 +381,7 @@ index 54b98c0..46f669b 100644
      default:
        return null;
    }
-@@ -568,13 +576,23 @@ function parseStringFieldRequest<TType extends "set_mode" | "set_model">(
+@@ -568,13 +576,14 @@ function parseStringFieldRequest<TType extends "set_mode" | "set_model">(
  function parseSetConfigOptionRequest(
    request: Record<string, unknown>,
    context: QueueRequestContext,
@@ -391,20 +391,11 @@ index 54b98c0..46f669b 100644
    const configId = parseNonEmptyString(request.configId);
    const value = parseNonEmptyString(request.value);
 -  if (!configId || !value) {
-+  if (
-+    !configId ||
-+    !value ||
-+    request.cliModelInput !== undefined
-+  ) {
++  if (!configId || !value || request.cliModelInput !== undefined) {
      return null;
    }
 -  return { type: "set_config_option", ...context, configId, value };
-+  return {
-+    type,
-+    ...context,
-+    configId,
-+    value,
-+  };
++  return { type, ...context, configId, value };
  }
  
  function parseNonEmptyString(value: unknown): string | null {
