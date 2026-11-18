@@ -1,0 +1,135 @@
+name: ACPX CLI model-aware fix candidate (manual review-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acpx-cli-model-intent-r029
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CI: "true"
+      GIT_TERMINAL_PROMPT: "0"
+      NODE_OPTIONS: --max-old-space-size=2048
+    steps:
+      - name: Checkout public conformance lab
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Select Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          check-latest: false
+
+      - name: Install locked upstream package manager without scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g --ignore-scripts --no-audit --no-fund pnpm@11.27.1
+          test "$(pnpm --version)" = "11.27.1"
+
+      - name: Fetch exact upstream source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth=1 --filter=blob:none --no-checkout https://github.com/openclaw/acpx.git upstream
+          git -C upstream fetch --quiet --depth=1 origin 48c1615057ae43893f80868f81cd3ee0445eb0ae
+          git -C upstream checkout --quiet --detach 48c1615057ae43893f80868f81cd3ee0445eb0ae
+          test "$(git -C upstream rev-parse HEAD)" = "48c1615057ae43893f80868f81cd3ee0445eb0ae"
+          test -z "$(git -C upstream status --porcelain)"
+
+      - name: Verify public fixture and candidate patch hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'D7DBE75447B752C2CC76397AB51F2675D972017EFBC8D9FE9F8DC5D685E5BD09  harness/acpx/acpx-cli-opaque-set.public-regression.test.ts' | sha256sum -c -
+          echo 'CCCE4F80F6550CE3CD83CA676B87EA1618B7F710BF954F390195A724C2950D86  harness/acpx/acpx-model-control-contract.public.test.ts' | sha256sum -c -
+          echo '3DD018949389862554E03A435FA39593149A57C408360B228B855EBC58E35CAC  harness/acpx/acpx-cli-model-intent.public.test.ts' | sha256sum -c -
+          echo 'DFF7390CF7B85813D83D66A38D0F7AC1DDD0A96F8F3BF909DED51B274A6AC8E2  patches/acpx-cli-model-intent-r029.patch' | sha256sum -c -
+          cp harness/acpx/acpx-cli-opaque-set.public-regression.test.ts upstream/test/
+          cp harness/acpx/acpx-model-control-contract.public.test.ts upstream/test/
+          cp harness/acpx/acpx-cli-model-intent.public.test.ts upstream/test/
+          test "$(git -C upstream status --porcelain | wc -l)" -eq 3
+          test -z "$(git -C upstream diff --name-only)"
+
+      - name: Apply isolated thirteen-file candidate after scope preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C upstream apply --check ../patches/acpx-cli-model-intent-r029.patch
+          git -C upstream apply ../patches/acpx-cli-model-intent-r029.patch
+          git -C upstream diff --check
+          test "$(git -C upstream diff --name-only | wc -l)" -eq 13
+          git -C upstream diff --stat
+
+      - name: Install frozen dependency graph without lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream install --frozen-lockfile --ignore-scripts --reporter append-only
+          git -C upstream diff --exit-code -- pnpm-lock.yaml
+
+      - name: Build official runtime
+        run: |
+          set -euo pipefail
+          pnpm -C upstream run build
+          test -s upstream/dist/runtime.js
+
+      - name: Compile official Node test sources
+        run: |
+          set -euo pipefail
+          pnpm -C upstream run build:test
+          test -s upstream/dist-test/test/acpx-cli-model-intent.public.test.js
+
+      - name: Run previous baselines and seven new candidate tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p harness/out
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-cli-opaque-set.public-regression.test.js) > harness/out/acpx-r027.tap 2>&1 || { tail -n 90 harness/out/acpx-r027.tap; exit 1; }
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-model-control-contract.public.test.js) > harness/out/acpx-r028.tap 2>&1 || { tail -n 90 harness/out/acpx-r028.tap; exit 1; }
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-cli-model-intent.public.test.js) > harness/out/acpx-r029.tap 2>&1 || { tail -n 90 harness/out/acpx-r029.tap; exit 1; }
+          tail -n 13 harness/out/acpx-r027.tap
+          tail -n 13 harness/out/acpx-r028.tap
+          tail -n 13 harness/out/acpx-r029.tap
+
+      - name: Verify all eighteen exact candidate tests
+        run: node harness/scripts/check-acpx-model-intent-r029.mjs
+
+      - name: Run selected maintained ACPX compatibility tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && node --test --test-reporter=tap \
+            dist-test/test/cli-flags.test.js \
+            dist-test/test/opaque-config.test.js \
+            dist-test/test/runtime-model-controls.test.js \
+            dist-test/test/session-mode-preference.test.js) > harness/out/acpx-maintained-scoped.tap 2>&1 || { tail -n 100 harness/out/acpx-maintained-scoped.tap; exit 1; }
+          tail -n 17 harness/out/acpx-maintained-scoped.tap
+
+      - name: Verify source TypeScript types
+        run: pnpm -C upstream run typecheck
+
+      - name: Check formatting of only modified upstream source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && git diff --name-only -z | xargs -0 pnpm exec oxfmt --check)
+
+      - name: Preserve scoped qualification artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: acpx-model-intent-r029-evidence
+          path: harness/out/*
+          if-no-files-found: warn
+          retention-days: 7
