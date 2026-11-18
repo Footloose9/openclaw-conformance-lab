@@ -92,12 +92,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pnpm -C upstream install --frozen-lockfile \
-            --filter 'openclaw...' \
-            --filter '@openclaw/gateway-client...' \
-            --filter '@openclaw/markdown-core...' \
-            --filter 'openclaw-control-ui...' \
-            --ignore-scripts --reporter append-only
+          if [ "${{ inputs.gate }}" = "gateway" ]; then
+            # The upstream runner builds every bundled plugin asset before Vitest.
+            # Install all workspace-declared dependencies; no lifecycle scripts.
+            pnpm -C upstream install --frozen-lockfile \
+              --ignore-scripts --reporter append-only
+          else
+            pnpm -C upstream install --frozen-lockfile \
+              --filter 'openclaw...' \
+              --filter '@openclaw/gateway-client...' \
+              --filter '@openclaw/markdown-core...' \
+              --filter 'openclaw-control-ui...' \
+              --ignore-scripts --reporter append-only
+          fi
           test -x upstream/node_modules/.bin/tsx
           df -h .
           free -h
