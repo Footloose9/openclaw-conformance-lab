@@ -29,3 +29,5 @@ The gates have independent outcomes. A successful dependency preflight is not Ty
 See [VALIDATION_RESULTS.md](VALIDATION_RESULTS.md) for exact run IDs, counts, upstream commit/patch identities, and evidence limitations.
 
 See [ACPX #1005 CLI value regression evidence](ACPX_1005_VALIDATION.md) for the separate source-bound ACPX parser test and its strict baseline acceptance.
+
+See [ACPX #1005 candidate review — mixed-version HOLD](ACPX_1005_CANDIDATE_REVIEW_ONLY.md) before considering the source-only patch for deployment.
