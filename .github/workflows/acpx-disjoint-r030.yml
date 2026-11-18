@@ -13,7 +13,7 @@ concurrency:
 jobs:
   review:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 25
     env:
       CI: "true"
       GIT_TERMINAL_PROMPT: "0"
@@ -224,11 +224,55 @@ jobs:
           set -euo pipefail
           (cd upstream && git diff --name-only -z | xargs -0 pnpm exec oxfmt --check)
 
+      - name: Reconcile ephemeral fixture scope before original full checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream status --porcelain | grep -c '^?? ')" -eq 10
+          test -f upstream/test/acpx-old-owner-queue-reject.public.test.ts
+          rm -- upstream/test/acpx-old-owner-queue-reject.public.test.ts
+          test -f upstream/test/acpx-old-owner-live-wire.public.test.ts
+          rm -- upstream/test/acpx-old-owner-live-wire.public.test.ts
+          test -f upstream/test/acpx-r032-old-executable-owner.public.fixture.ts
+          rm -- upstream/test/acpx-r032-old-executable-owner.public.fixture.ts
+          test -f upstream/test/acpx-cli-opaque-set.public-regression.test.ts
+          rm -- upstream/test/acpx-cli-opaque-set.public-regression.test.ts
+          test -f upstream/test/acpx-model-control-contract.public.test.ts
+          rm -- upstream/test/acpx-model-control-contract.public.test.ts
+          test -f upstream/test/acpx-cli-model-intent-r030.public.test.ts
+          rm -- upstream/test/acpx-cli-model-intent-r030.public.test.ts
+          test -f upstream/test/acpx-r032-new-client-old-owner.public.test.ts
+          rm -- upstream/test/acpx-r032-new-client-old-owner.public.test.ts
+          test -f upstream/test/acpx-r033-owner-capability.public.test.ts
+          rm -- upstream/test/acpx-r033-owner-capability.public.test.ts
+          test -f upstream/test/acpx-r034-owner-lifecycle.public.test.ts
+          rm -- upstream/test/acpx-r034-owner-lifecycle.public.test.ts
+          test -d upstream/.r032-old-dist-test
+          rm -rf -- upstream/.r032-old-dist-test
+          test -z "$(git -C upstream ls-files --others --exclude-standard)"
+          test "$(git -C upstream diff --name-only | wc -l)" -eq 14
+          git -C upstream diff --check
+          echo "R035_SOURCE_ONLY_SNAPSHOT=PASS"
+
+      - name: Complete upstream check without synthetic conformance fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && pnpm run check) > harness/out/acpx-r035-upstream-check.log 2>&1 || { tail -n 140 harness/out/acpx-r035-upstream-check.log; exit 1; }
+          tail -n 35 harness/out/acpx-r035-upstream-check.log
+
+      - name: Configured single-worker Stryker mutation gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && pnpm run mutate) > harness/out/acpx-r035-mutation.log 2>&1 || { tail -n 120 harness/out/acpx-r035-mutation.log; exit 1; }
+          tail -n 35 harness/out/acpx-r035-mutation.log
+
       - name: Upload scoped source evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: acpx-disjoint-r034-evidence
+          name: acpx-disjoint-r035-evidence
           path: harness/out/*
           if-no-files-found: warn
           retention-days: 7
