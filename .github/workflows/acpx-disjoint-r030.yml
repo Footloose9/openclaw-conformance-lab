@@ -158,6 +158,38 @@ jobs:
       - name: Verify 22 exact identities across old and new source
         run: node harness/scripts/check-acpx-r030.mjs
 
+      - name: Apply R033 capability preflight overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '20FF8DDEB76AC4D52DF568367E2C838AFB37FEC4866C13E3C7EEEB1776FB97E6  patches/acpx-cli-owner-capability-r033.patch' | sha256sum -c -
+          echo 'E580D76505221FEBB23B33E7BF127E8F960DA95BA497BEB8978128AF3B53B8C7  harness/acpx/acpx-r033-owner-capability.public.test.ts' | sha256sum -c -
+          git -C upstream apply --check ../patches/acpx-cli-owner-capability-r033.patch
+          git -C upstream apply ../patches/acpx-cli-owner-capability-r033.patch
+          git -C upstream diff --check
+          test "$(git -C upstream diff --name-only | wc -l)" -eq 14
+          cp harness/acpx/acpx-r033-owner-capability.public.test.ts upstream/test/
+          test "$(git -C upstream status --porcelain | grep -c '^?? ')" -eq 9
+
+      - name: Rebuild after R033 on pinned source
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream run build
+          pnpm -C upstream run build:test
+          test -s upstream/dist-test/test/acpx-r033-owner-capability.public.test.js
+
+      - name: Verify R033 true-version and adversarial response behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-r033-owner-capability.public.test.js) > harness/out/acpx-r033-owner-capability.tap 2>&1 || { tail -n 120 harness/out/acpx-r033-owner-capability.tap; exit 1; }
+          grep -Fqx '# tests 3' harness/out/acpx-r033-owner-capability.tap
+          grep -Fqx '# pass 3' harness/out/acpx-r033-owner-capability.tap
+          grep -Fqx '# fail 0' harness/out/acpx-r033-owner-capability.tap
+          grep -Fqx '# cancelled 0' harness/out/acpx-r033-owner-capability.tap
+          tail -n 21 harness/out/acpx-r033-owner-capability.tap
+
       - name: Run selected upstream maintained tests
         shell: bash
         run: |
@@ -182,7 +214,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: acpx-disjoint-r030-evidence
+          name: acpx-disjoint-r033-evidence
           path: harness/out/*
           if-no-files-found: warn
           retention-days: 7

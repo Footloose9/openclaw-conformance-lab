@@ -1,0 +1,58 @@
+diff --git a/src/session/queue/ipc.ts b/src/session/queue/ipc.ts
+index 3abb2bd..19bdc2c 100644
+--- a/src/session/queue/ipc.ts
++++ b/src/session/queue/ipc.ts
+@@ -637,6 +637,14 @@ async function submitSetConfigOptionToQueueOwner(
+   assertDispatch?: () => void,
+   cliModelInput?: true,
+ ): Promise<SetSessionConfigOptionResponse | undefined> {
++  // Older owners cannot parse the dedicated CLI control kind. Refuse locally
++  // before writing to their socket; never downgrade to the legacy request.
++  if (cliModelInput === true && owner.supportsCliConfigOptionIntent !== true) {
++    throw new QueueConnectionError(
++      "Running queue owner does not support CLI config option intent; close the session before retrying",
++      { detailCode: "QUEUE_CLI_CONFIG_OWNER_UNSUPPORTED", origin: "queue", retryable: false },
++    );
++  }
+   const request: QueueSetConfigOptionRequest | QueueSetCliConfigOptionRequest = {
+     type: cliModelInput === true ? "set_cli_config_option" : "set_config_option",
+     requestId: randomUUID(),
+diff --git a/src/session/queue/lease-store.ts b/src/session/queue/lease-store.ts
+index e1535d3..ba003fb 100644
+--- a/src/session/queue/lease-store.ts
++++ b/src/session/queue/lease-store.ts
+@@ -55,6 +55,7 @@ export type QueueOwnerRecord = {
+   sharedRuntime?: boolean;
+   sessionWatch?: boolean;
+   persistsControlState?: boolean;
++  supportsCliConfigOptionIntent?: boolean;
+   mcpConfigPath?: string;
+   mcpConfigFingerprint?: string;
+ };
+@@ -110,11 +111,17 @@ function parseQueueOwnerRecord(raw: unknown): QueueOwnerRecord | null {
+ 
+ function parseQueueOwnerCapabilities(
+   record: Record<string, unknown>,
+-): Pick<QueueOwnerRecord, "sharedRuntime" | "sessionWatch" | "persistsControlState"> {
++): Pick<
++  QueueOwnerRecord,
++  "sharedRuntime" | "sessionWatch" | "persistsControlState" | "supportsCliConfigOptionIntent"
++> {
+   return {
+     ...(record.sharedRuntime === true ? { sharedRuntime: true } : {}),
+     ...(record.sessionWatch === true ? { sessionWatch: true } : {}),
+     ...(record.persistsControlState === true ? { persistsControlState: true } : {}),
++    ...(record.supportsCliConfigOptionIntent === true
++      ? { supportsCliConfigOptionIntent: true }
++      : {}),
+   };
+ }
+ 
+@@ -605,6 +612,7 @@ async function stageQueueOwnerRecord(
+       sharedRuntime: true,
+       sessionWatch: true,
+       persistsControlState: true,
++      supportsCliConfigOptionIntent: true,
+       ...(lease.mcpConfigPath ? { mcpConfigPath: lease.mcpConfigPath } : {}),
+       ...(lease.mcpConfigFingerprint ? { mcpConfigFingerprint: lease.mcpConfigFingerprint } : {}),
+     },
