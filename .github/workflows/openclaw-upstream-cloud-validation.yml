@@ -96,6 +96,7 @@ jobs:
             --filter 'openclaw...' \
             --filter '@openclaw/gateway-client...' \
             --filter '@openclaw/markdown-core...' \
+            --filter 'openclaw-control-ui...' \
             --ignore-scripts --reporter append-only
           test -x upstream/node_modules/.bin/tsx
           df -h .
