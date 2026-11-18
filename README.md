@@ -31,3 +31,5 @@ See [VALIDATION_RESULTS.md](VALIDATION_RESULTS.md) for exact run IDs, counts, up
 See [ACPX #1005 CLI value regression evidence](ACPX_1005_VALIDATION.md) for the separate source-bound ACPX parser test and its strict baseline acceptance.
 
 See [ACPX #1005 candidate review — mixed-version HOLD](ACPX_1005_CANDIDATE_REVIEW_ONLY.md) before considering the source-only patch for deployment.
+
+See [ACPX #1005 R030 disjoint-owner source review](ACPX_1005_DISJOINT_OWNER_SOURCE_REVIEW.md) for the scoped old-parser negative test, new-source contract proof and remaining mixed-version integration gate.
