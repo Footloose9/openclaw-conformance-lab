@@ -1,0 +1,112 @@
+name: ACPX 1005 exact non-model value regression (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acpx-1005-public-cli-baseline
+  cancel-in-progress: false
+
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CI: "true"
+      GIT_TERMINAL_PROMPT: "0"
+      NODE_OPTIONS: --max-old-space-size=2048
+    steps:
+      - name: Checkout public conformance lab
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Select Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          check-latest: false
+
+      - name: Install exact ACPX package manager without install scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g --ignore-scripts --no-audit --no-fund pnpm@11.27.1
+          test "$(pnpm --version)" = "11.27.1"
+          node --version
+
+      - name: Fetch exact upstream ACPX source, no credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth=1 --filter=blob:none --no-checkout \
+            https://github.com/openclaw/acpx.git upstream
+          git -C upstream fetch --quiet --depth=1 origin \
+            48c1615057ae43893f80868f81cd3ee0445eb0ae
+          git -C upstream checkout --quiet --detach \
+            48c1615057ae43893f80868f81cd3ee0445eb0ae
+          test "$(git -C upstream rev-parse HEAD)" = \
+            "48c1615057ae43893f80868f81cd3ee0445eb0ae"
+          test -z "$(git -C upstream status --porcelain=v1)"
+
+      - name: Insert only three synthetic tests, preserve production code
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'D7DBE75447B752C2CC76397AB51F2675D972017EFBC8D9FE9F8DC5D685E5BD09  harness/acpx/acpx-cli-opaque-set.public-regression.test.ts' |
+            sha256sum -c -
+          cp harness/acpx/acpx-cli-opaque-set.public-regression.test.ts \
+            upstream/test/acpx-cli-opaque-set.public-regression.test.ts
+          test "$(git -C upstream status --porcelain=v1)" = \
+            "?? test/acpx-cli-opaque-set.public-regression.test.ts"
+          git -C upstream diff --exit-code
+          echo "PASS: upstream production files unchanged"
+
+      - name: Install upstream locked dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream install --frozen-lockfile --ignore-scripts \
+            --reporter append-only
+          git -C upstream diff --exit-code -- pnpm-lock.yaml
+          test -x upstream/node_modules/.bin/tsc
+
+      - name: Build official Node test sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream run build:test
+          test -s upstream/dist-test/test/acpx-cli-opaque-set.public-regression.test.js
+
+      - name: Run real production CLI parser with synthetic receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p harness/out
+          set +e
+          (
+            cd upstream
+            node --test --test-reporter=tap \
+              dist-test/test/acpx-cli-opaque-set.public-regression.test.js
+          ) > harness/out/acpx-baseline.tap 2>&1
+          rc="$?"
+          set -e
+          tail -n 65 harness/out/acpx-baseline.tap
+          echo "Actual baseline test exit: $rc"
+          test "$rc" -ne 0
+          test -s harness/out/acpx-baseline.tap
+
+      - name: Verify only the named exact-value regression fails
+        run: node harness/scripts/check-acpx-baseline.mjs
+
+      - name: Preserve source-bound test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: acpx-1005-baseline-evidence
+          path: harness/out/*
+          if-no-files-found: warn
+          retention-days: 7
