@@ -118,10 +118,14 @@ jobs:
           set -euo pipefail
           cd upstream
           node scripts/run-vitest.mjs run \
-            --config test/vitest/vitest.gateway-methods.config.ts \
+            --config test/vitest/vitest.gateway-database-workers.config.ts \
             src/gateway/server-methods/models-list.freshness.integration.test.ts \
             --maxWorkers=1 --no-file-parallelism \
-            --reporter=json --outputFile=../harness/out/real-gateway-integration.json
+            --reporter=json --outputFile=../harness/out/real-gateway-integrati      - name: Classify actual Gateway test outcomes and reject zero-test passes
+        if: always() && inputs.gate == 'gateway'
+        run: node harness/scripts/check-real-gateway-report.mjs
+
+on.json
 
       - name: Preserve evidence and diagnostics
         if: always()
