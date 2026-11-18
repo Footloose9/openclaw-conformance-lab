@@ -38,4 +38,6 @@ try {
   await owner.close();
   await releaseQueueOwnerLease(lease);
   process.stdout.write(JSON.stringify({ type: "closed", calls }) + "\n");
+  process.stdin.pause();
+  process.stdin.destroy();
 }

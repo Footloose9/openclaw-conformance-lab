@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           echo 'CDB7F1843D38E965089BE0DAA34604095846BCF36BE784F7B1354026941529EE  harness/acpx/acpx-old-owner-queue-reject.public.test.ts' | sha256sum -c -
           echo '8F4DF413F37111ABADC7ADE352867B2FDB326142D141E03CFA29FF77C114D3EA  harness/acpx/acpx-old-owner-live-wire.public.test.ts' | sha256sum -c -
-          echo 'F1AA66C01F752DD4B7006A6073F18B5536327357EE0B4ACFFA39B836574DA3DD  harness/acpx/acpx-r032-old-executable-owner.public.fixture.ts' | sha256sum -c -
+          echo '32F15E4D149E8EC94F4B9C7B777407611BF53743A4C86DCE5CF548EB7D290788  harness/acpx/acpx-r032-old-executable-owner.public.fixture.ts' | sha256sum -c -
           echo '3362A07F5A1D573191907B2281DC9A8CB46ADEEEEA9AFB44B7F361DEEF4305E0  harness/acpx/acpx-r032-new-client-old-owner.public.test.ts' | sha256sum -c -
           echo '95607B5E8E2614B23D64E77EFEA00108F4F23793AB054D5F37A8AC069DF7BF0D  harness/acpx/acpx-cli-model-intent-r030.public.test.ts' | sha256sum -c -
           echo '31D4D280E9702F5C3710B44C168093C74ADF886063B44769CDC57A3A22C911C4  patches/acpx-cli-model-intent-r030.patch' | sha256sum -c -
