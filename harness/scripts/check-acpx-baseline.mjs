@@ -14,7 +14,7 @@ const observed = log
   .filter((line) => /^(?:not ok|ok) \d+ - /u.test(line))
   .map((line) => {
     const match = /^(not ok|ok) \d+ - (.+)$/u.exec(line);
-    return { name: match?.[2] ?? "", result: match?.[1] ?? "" };
+    return { name: (match?.[2] ?? "").replaceAll("\\#", "#"), result: match?.[1] ?? "" };
   });
 const counters = Object.fromEntries(
   [...log.matchAll(/^# (tests|pass|fail|cancelled|skipped|todo) (\d+)\s*$/gmu)]
