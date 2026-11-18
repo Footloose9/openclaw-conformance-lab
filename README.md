@@ -19,3 +19,9 @@ The workflow is **manual-only** (`workflow_dispatch`), uses a standard GitHub-ho
 The first workflow checks exact patch applicability and six actual Vitest tests using synthetic service boundaries. It is **not** a claim that OpenClaw's complete upstream test suite, whole-source TypeScript check, or running-Gateway end-to-end tests passed. Those require separate evidence.
 
 Any contribution or pull request to the upstream OpenClaw project requires distinct review and authorization. This repository neither signs ledger transactions nor performs production operations.
+
+## Extended upstream validation (manual, resource-bounded)
+
+The additional workflow at `.github/workflows/openclaw-upstream-cloud-validation.yml` uses a verified pnpm 12.15.0 Linux binary and the exact upstream commit and patch. It offers three manually selected gates: `dependency-preflight` (strict frozen lockfile/supply-chain check), `typecheck` (actual upstream TypeScript compiler and source graph, not structural stubs), and `gateway` (the upstream model-catalog freshness integration test that starts test-only Gateway infrastructure). Each gate uses a standard free public Ubuntu runner, has a 20-minute job ceiling, requires no credentials, and retains diagnostic artifacts for seven days.
+
+The gates have independent outcomes. A successful dependency preflight is not TypeScript proof; a scoped typecheck is not a whole-repository typecheck; a passing Gateway test is not production or device validation. The original narrow six-test reproduction remains separately preserved. No automatic schedules or paid runners are configured.

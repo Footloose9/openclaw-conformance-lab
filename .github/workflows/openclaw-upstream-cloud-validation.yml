@@ -1,0 +1,129 @@
+name: OpenClaw upstream real-source validation (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      gate:
+        description: Choose the isolated official-upstream validation tier
+        type: choice
+        required: true
+        default: dependency-preflight
+        options:
+          - dependency-preflight
+          - typecheck
+          - gateway
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openclaw-upstream-real-source-validation
+  cancel-in-progress: false
+
+jobs:
+  official-upstream:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      CI: "true"
+      GIT_TERMINAL_PROMPT: "0"
+      OPENCLAW_LIVE_TEST: "0"
+      OPENCLAW_SKIP_CHANNELS: "1"
+      DO_NOT_TRACK: "1"
+      NODE_OPTIONS: --max-old-space-size=2048
+    steps:
+      - name: Checkout clean public conformance lab
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Set up pinned Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          check-latest: false
+
+      - name: Verify and install exact pnpm 12 native Linux executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pnpm12"
+          curl --fail --silent --show-error --location --retry 2 \
+            --connect-timeout 7 --max-time 80 \
+            'https://registry.npmjs.org/@pnpm/exe.linux-x64/-/exe.linux-x64-12.15.0.tgz' \
+            -o "$RUNNER_TEMP/pnpm12/pnpm.tgz"
+          actual="$(openssl dgst -sha512 -binary "$RUNNER_TEMP/pnpm12/pnpm.tgz" | openssl base64 -A)"
+          expected='yc+QlZR+9+nr29J4fRzhMoapgxTBDndq/+peyoq1XUufnQFnfbXUMFudDIKzHi545linGqmOmXfn0NoufNgcOg=='
+          test "$actual" = "$expected"
+          tar -xzf "$RUNNER_TEMP/pnpm12/pnpm.tgz" -C "$RUNNER_TEMP/pnpm12"
+          echo "$RUNNER_TEMP/pnpm12/package" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/pnpm12/package/pnpm" --version | grep -Fx '12.15.0'
+
+      - name: Fetch pinned public upstream source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth=1 --filter=blob:none --no-checkout \
+            https://github.com/openclaw/openclaw.git upstream
+          git -C upstream fetch --quiet --depth=1 origin \
+            cf5cf7a8c609d8b26bd81495634eda973a2e4742
+          git -C upstream checkout --quiet --detach \
+            cf5cf7a8c609d8b26bd81495634eda973a2e4742
+          df -h .
+          free -h
+
+      - name: Apply and prove exact three-file patch on original sources
+        run: node harness/scripts/verify-real-upstream.mjs
+
+      - name: Frozen upstream lockfile and supply-chain validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream install --frozen-lockfile --lockfile-only \
+            --filter 'openclaw...' --ignore-scripts --reporter append-only
+          git -C upstream diff --exit-code -- pnpm-lock.yaml
+          printf 'PASS: pinned pnpm12 frozen upstream lockfile and policy checks\n'
+
+      - name: Install required real upstream dependencies in hosted runner
+        if: inputs.gate == 'typecheck' || inputs.gate == 'gateway'
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream install --frozen-lockfile \
+            --filter 'openclaw...' --ignore-scripts --reporter append-only
+          test -x upstream/node_modules/.bin/tsx
+          df -h .
+          free -h
+
+      - name: Validate actual upstream TypeScript module graph with official checker
+        if: inputs.gate == 'typecheck'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node harness/scripts/write-real-tsconfig.mjs
+          cd upstream
+          node scripts/run-tsgo.mjs -p .openclaw-conformance-tsconfig.json --noEmit
+
+      - name: Run actual isolated Gateway model-catalog freshness integration tests
+        if: inputs.gate == 'gateway'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd upstream
+          node scripts/run-vitest.mjs run \
+            --config test/vitest/vitest.gateway-methods.config.ts \
+            src/gateway/server-methods/models-list.freshness.integration.test.ts \
+            --maxWorkers=1 --no-file-parallelism \
+            --reporter=json --outputFile=../harness/out/real-gateway-integration.json
+
+      - name: Preserve evidence and diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: real-upstream-${{ inputs.gate }}-evidence
+          path: harness/out/*.json
+          if-no-files-found: warn
+          retention-days: 7
