@@ -164,12 +164,14 @@ jobs:
           set -euo pipefail
           echo '20FF8DDEB76AC4D52DF568367E2C838AFB37FEC4866C13E3C7EEEB1776FB97E6  patches/acpx-cli-owner-capability-r033.patch' | sha256sum -c -
           echo 'E580D76505221FEBB23B33E7BF127E8F960DA95BA497BEB8978128AF3B53B8C7  harness/acpx/acpx-r033-owner-capability.public.test.ts' | sha256sum -c -
+          echo '959377B7C59455B203D45A63A012355C76E1485DD6736E7185F7F9E726C7D614  harness/acpx/acpx-r034-owner-lifecycle.public.test.ts' | sha256sum -c -
           git -C upstream apply --check ../patches/acpx-cli-owner-capability-r033.patch
           git -C upstream apply ../patches/acpx-cli-owner-capability-r033.patch
           git -C upstream diff --check
           test "$(git -C upstream diff --name-only | wc -l)" -eq 14
           cp harness/acpx/acpx-r033-owner-capability.public.test.ts upstream/test/
-          test "$(git -C upstream status --porcelain | grep -c '^?? ')" -eq 9
+          cp harness/acpx/acpx-r034-owner-lifecycle.public.test.ts upstream/test/
+          test "$(git -C upstream status --porcelain | grep -c '^?? ')" -eq 10
 
       - name: Rebuild after R033 on pinned source
         shell: bash
@@ -178,6 +180,7 @@ jobs:
           pnpm -C upstream run build
           pnpm -C upstream run build:test
           test -s upstream/dist-test/test/acpx-r033-owner-capability.public.test.js
+          test -s upstream/dist-test/test/acpx-r034-owner-lifecycle.public.test.js
 
       - name: Verify R033 true-version and adversarial response behavior
         shell: bash
@@ -189,6 +192,17 @@ jobs:
           grep -Fqx '# fail 0' harness/out/acpx-r033-owner-capability.tap
           grep -Fqx '# cancelled 0' harness/out/acpx-r033-owner-capability.tap
           tail -n 21 harness/out/acpx-r033-owner-capability.tap
+
+      - name: Verify R034 owner lifecycle, active queue, and forged metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd upstream && node --test --test-reporter=tap dist-test/test/acpx-r034-owner-lifecycle.public.test.js) > harness/out/acpx-r034-owner-lifecycle.tap 2>&1 || { tail -n 140 harness/out/acpx-r034-owner-lifecycle.tap; exit 1; }
+          grep -Fqx '# tests 3' harness/out/acpx-r034-owner-lifecycle.tap
+          grep -Fqx '# pass 3' harness/out/acpx-r034-owner-lifecycle.tap
+          grep -Fqx '# fail 0' harness/out/acpx-r034-owner-lifecycle.tap
+          grep -Fqx '# cancelled 0' harness/out/acpx-r034-owner-lifecycle.tap
+          tail -n 22 harness/out/acpx-r034-owner-lifecycle.tap
 
       - name: Run selected upstream maintained tests
         shell: bash
@@ -214,7 +228,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: acpx-disjoint-r033-evidence
+          name: acpx-disjoint-r034-evidence
           path: harness/out/*
           if-no-files-found: warn
           retention-days: 7
