@@ -1,0 +1,143 @@
+diff --git a/src/agents/prepared-model-runtime.catalog-access.ts b/src/agents/prepared-model-runtime.catalog-access.ts
+index 3c4604b..16462d9 100644
+--- a/src/agents/prepared-model-runtime.catalog-access.ts
++++ b/src/agents/prepared-model-runtime.catalog-access.ts
+@@ -646,9 +646,11 @@ export async function createFullModelCatalogAccess(
+       await current.promise.catch(() => undefined);
+       return acquireCatalog(options, trigger);
+     }
+-    if (trigger === "request") {
+-      attempt.setPending(fullRefresh || providers.length ? providers : undefined);
+-    }
++    attempt.setPending(
++      fullRefresh || providers.length ? providers : undefined,
++      "provider",
++      trigger === "expiry",
++    );
+     const providerIds = fullRefresh ? undefined : providers;
+     // Generation custody spans both phases so native acquisition never finds it retired; custody
+     // holds no plugin, so a slow native lookup does not defer reloads (#199521).
+diff --git a/src/agents/prepared-model-runtime.publication-events.ts b/src/agents/prepared-model-runtime.publication-events.ts
+index e01618f..5a8701c 100644
+--- a/src/agents/prepared-model-runtime.publication-events.ts
++++ b/src/agents/prepared-model-runtime.publication-events.ts
+@@ -70,6 +70,11 @@ export function createCatalogAttemptReporter(
+     provider: undefined,
+     native: undefined,
+   };
++  // Track background acquisition independently of user-visible pending state.
++  const silentPendingProviders: typeof pendingProviders = {
++    provider: undefined,
++    native: undefined,
++  };
+   const pendingCount = () =>
+     (pendingProviders.provider?.length ?? 0) + (pendingProviders.native?.length ?? 0);
+   const readPendingProviders = () =>
+@@ -82,7 +87,7 @@ export function createCatalogAttemptReporter(
+     kind: PreparedModelCatalogAcquisitionKind = "provider",
+   ) => {
+     if (isCurrent() && !(error instanceof PreparedModelRuntimePublicationSupersededError)) {
+-      const pending = pendingProviders[kind];
++      const pending = pendingProviders[kind] ?? silentPendingProviders[kind];
+       const scope = providers ?? pending ?? [];
+       const failedScope = scope.length ? scope : [undefined];
+       // Empty scopes are admitted work too. Only idle, already-recorded failures are duplicates.
+@@ -99,6 +104,7 @@ export function createCatalogAttemptReporter(
+         attempt.failedProviders[kind].add(provider);
+       }
+       pendingProviders[kind] = undefined;
++      silentPendingProviders[kind] = undefined;
+       owner.catalogAttempt = attempt;
+       notifyPreparedModelRuntimePublication({
+         phase: "catalog-failed",
+@@ -112,9 +118,14 @@ export function createCatalogAttemptReporter(
+     setPending: (
+       providers: readonly string[] | undefined,
+       kind: PreparedModelCatalogAcquisitionKind = "provider",
++      silent = false,
+     ) => {
+       const previous = readPendingProviders();
+-      pendingProviders[kind] = providers;
++      if (silent) {
++        silentPendingProviders[kind] = providers;
++      } else {
++        pendingProviders[kind] = providers;
++      }
+       owner.catalogAttempt = attempt;
+       if (!isDeepStrictEqual(previous, readPendingProviders())) {
+         notifyPreparedModelRuntimePublication({
+@@ -180,6 +191,12 @@ export function createCatalogAttemptReporter(
+         ? pendingProviders[acquisitionKind]?.filter((provider) => !providers.includes(provider))
+         : undefined;
+       pendingProviders[acquisitionKind] = remaining?.length ? remaining : undefined;
++      const stillSilent = providers
++        ? silentPendingProviders[acquisitionKind]?.filter(
++            (provider) => !providers.includes(provider),
++          )
++        : undefined;
++      silentPendingProviders[acquisitionKind] = stillSilent?.length ? stillSilent : undefined;
+       if (providers) {
+         for (const provider of providers) {
+           attempt.failedProviders[acquisitionKind].delete(provider);
+diff --git a/src/agents/prepared-model-runtime.publication-events.test.ts b/src/agents/prepared-model-runtime.publication-events.test.ts
+index e1ace85..7cd84aa 100644
+--- a/src/agents/prepared-model-runtime.publication-events.test.ts
++++ b/src/agents/prepared-model-runtime.publication-events.test.ts
+@@ -109,4 +109,57 @@ describe("catalog attempt status publication", () => {
+       unregister();
+     }
+   });
++
++  it("records each failed background provider acquisition without exposing pending status", () => {
++    const onFailure = vi.fn();
++    const reporter = createCatalogAttemptReporter(
++      {},
++      { key: "synthetic", pluginFingerprint: "synthetic", credentials: {} },
++      () => true,
++      onFailure,
++    );
++    const catalog = reporter.withRefreshStatus({ entries: [], routeVariants: [] });
++    const events = vi.fn();
++    const unregister = registerPreparedModelRuntimePublicationListener(events);
++    try {
++      reporter.setPending(["fixture"], "provider");
++      expect(catalog.pendingProviders).toEqual(["fixture"]);
++      reporter.failed(new Error("initial request"), ["fixture"], "provider");
++      expect(onFailure).toHaveBeenCalledTimes(1);
++      const priorStatusCount = events.mock.calls.filter(
++        ([event]) => event.phase === "catalog-status",
++      ).length;
++      reporter.setPending(["fixture"], "provider", true);
++      expect(catalog.pendingProviders).toBeUndefined();
++      reporter.failed(new Error("background renewal"), ["fixture"], "provider");
++      expect(onFailure).toHaveBeenCalledTimes(2);
++      reporter.failed(new Error("duplicate late report"), ["fixture"], "provider");
++      expect(onFailure).toHaveBeenCalledTimes(2);
++      expect(
++        events.mock.calls.filter(([event]) => event.phase === "catalog-status"),
++      ).toHaveLength(priorStatusCount);
++    } finally {
++      unregister();
++    }
++  });
++
++  it("retains the silent failed-provider scope after sibling publication", () => {
++    const onFailure = vi.fn();
++    const reporter = createCatalogAttemptReporter(
++      {},
++      { key: "synthetic", pluginFingerprint: "synthetic", credentials: {} },
++      () => true,
++      onFailure,
++    );
++    const catalog = reporter.withRefreshStatus({ entries: [], routeVariants: [] });
++    reporter.setPending(["success", "failure"], "provider", true);
++    expect(catalog.pendingProviders).toBeUndefined();
++    reporter.published(["success"], "provider");
++    reporter.failed(new Error("failure after partial publication"), ["failure"], "provider");
++    expect(onFailure).toHaveBeenCalledTimes(1);
++    expect(catalog.refreshFailures).toEqual([
++      { acquisition: "provider", provider: "failure" },
++    ]);
++    expect(catalog.pendingProviders).toBeUndefined();
++  });
+ });

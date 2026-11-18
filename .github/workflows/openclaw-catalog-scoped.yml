@@ -1,0 +1,68 @@
+name: OpenClaw catalog conformance (manual, scoped)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openclaw-catalog-conformance-manual
+  cancel-in-progress: false
+
+jobs:
+  source-regression:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      CI: "true"
+      NODE_OPTIONS: --max-old-space-size=1024
+    steps:
+      - name: Checkout private test definitions (without persistent token)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Node.js version
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          check-latest: false
+
+      - name: Retrieve exact public OpenClaw source (no private clone)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q --no-checkout --depth=1 --filter=blob:none \
+            https://github.com/openclaw/openclaw.git upstream
+          git -C upstream fetch -q --depth=1 origin \
+            cf5cf7a8c609d8b26bd81495634eda973a2e4742
+          git -C upstream sparse-checkout set --no-cone \
+            '/src/agents/prepared-model-runtime.catalog-access.ts' \
+            '/src/agents/prepared-model-runtime.publication-events.ts' \
+            '/src/agents/prepared-model-runtime.publication-events.test.ts'
+          git -C upstream checkout -q --detach \
+            cf5cf7a8c609d8b26bd81495634eda973a2e4742
+          test "$(git -C upstream rev-parse HEAD)" = \
+            'cf5cf7a8c609d8b26bd81495634eda973a2e4742'
+
+      - name: Verify patch identity and prepare red/green sources
+        run: node harness/scripts/stage.mjs
+
+      - name: Install minimal locked Vitest dependencies (no lifecycle scripts)
+        run: npm ci --prefix harness --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+
+      - name: Run expected-negative baseline and corrected source through real Vitest
+        run: node harness/scripts/run-tests.mjs
+
+      - name: Preserve short-lived test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scoped-catalog-red-green
+          path: harness/out/*.json
+          if-no-files-found: warn
+          retention-days: 7

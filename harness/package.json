@@ -1,0 +1,15 @@
+{
+  "name": "openclaw-conformance-synthetic-test-harness",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Isolated Vitest runner; no real provider credentials or Gateway processes",
+  "scripts": {
+    "prepare": "node scripts/stage.mjs",
+    "test": "node scripts/run-tests.mjs"
+  },
+  "devDependencies": {
+    "vitest": "5.0.5",
+    "vite": "7.3.1"
+  }
+}

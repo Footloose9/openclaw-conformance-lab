@@ -1,0 +1,10 @@
+# Upstream source is fetched transiently by the workflow.
+upstream/
+harness/node_modules/
+harness/work/
+harness/out/
+*.log
+.env
+.env.*
+!.env.example
+harness/_npm_cache/
