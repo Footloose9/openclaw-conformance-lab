@@ -289,7 +289,7 @@ index 3df5a3c..a730ca8 100644
          }),
        });
 diff --git a/src/session/queue/ipc.ts b/src/session/queue/ipc.ts
-index e933f96..4d8124f 100644
+index e933f96..9d5b6e7 100644
 --- a/src/session/queue/ipc.ts
 +++ b/src/session/queue/ipc.ts
 @@ -634,6 +634,7 @@ async function submitSetConfigOptionToQueueOwner(
@@ -316,13 +316,18 @@ index e933f96..4d8124f 100644
  ): Promise<OwnerControlResult<SetSessionConfigOptionResponse> | undefined> {
    return await tryControlOnRunningOwner({
      sessionId,
-@@ -883,7 +886,9 @@ export async function trySetConfigOptionOnRunningOwner(
+@@ -883,7 +886,14 @@ export async function trySetConfigOptionOnRunningOwner(
      submit: (owner) =>
        withOwnerControlPersistence(
          owner,
 -        submitSetConfigOptionToQueueOwner(owner, configId, value, timeoutMs, assertDispatch),
 +        submitSetConfigOptionToQueueOwner(
-+          owner, configId, value, timeoutMs, assertDispatch, cliModelInput,
++          owner,
++          configId,
++          value,
++          timeoutMs,
++          assertDispatch,
++          cliModelInput,
 +        ),
        ),
    });

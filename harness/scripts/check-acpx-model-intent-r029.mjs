@@ -50,7 +50,7 @@ const outcome = cases.map(({ file, tap, tests }) => {
   const exactCount = counters.tests === tests.length && counters.pass === tests.length && counters.fail === 0 && counters.cancelled === 0 && counters.skipped === 0 && counters.todo === 0;
   return { file, exactNames, exactCount, counters, observed, verified: exactNames && exactCount };
 });
-const result = { status: outcome.every(x=>x.verified) ? "PASS_CANDIDATE_EXACT_SOURCE_CASES" : "HOLD_UNEXPECTED_TEST_RESULT", expectedCounts:[3,8,7], upstreamPin:"48c1615057ae43893f80868f81cd3ee0445eb0ae", patchSha256:"ADAE3259F1447A3523864B371D867BE6BE1E9A3AB181EFCB857AF50F5C928D9F", outcomes: outcome, scope:"CLI argument, source helper, queue parser; not live old-owner compatibility" };
+const result = { status: outcome.every(x=>x.verified) ? "PASS_CANDIDATE_EXACT_SOURCE_CASES" : "HOLD_UNEXPECTED_TEST_RESULT", expectedCounts:[3,8,7], upstreamPin:"48c1615057ae43893f80868f81cd3ee0445eb0ae", patchSha256:"BD430DADFD56BB33B7B5868A9F5CB9A7A5DDAB56436456B7D396B385B6D5626E", outcomes: outcome, scope:"CLI argument, source helper, queue parser; not live old-owner compatibility" };
 writeFileSync("harness/out/acpx-candidate-r029-summary.json", JSON.stringify(result,null,2)+"\n");
 console.log("ACPX_CANDIDATE_R029_GATE:",JSON.stringify(result));
 assert.equal(outcome.every(x=>x.verified),true,"Only exact passing production candidate tests are accepted");
