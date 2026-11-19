@@ -1,4 +1,4 @@
-name: ACPX upstream-format R036 qualification (manual)
+name: ACPX R038 stale-owner recovery regression (manual)
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: acpx-upstream-format-r036
+  group: acpx-upstream-stale-r038
   cancel-in-progress: false
 
 jobs:
@@ -56,6 +56,8 @@ jobs:
           echo '578CF126905E71BFA2B9EB8E3967E768AD9AC8AC02F91E04EFFA7D79B12DA243  harness/acpx/upstream-r036/cli-config-model-intent.test.ts' | sha256sum -c -
           echo 'A976096E70870B2FAE3B3F095EA4EF02A5D5E2183C267117539E75568A048A89  harness/acpx/upstream-r036/cli-config-opaque-value.test.ts' | sha256sum -c -
           echo 'E7B682B774B17B3ACD26821D706CC939D0D612894DB9988AF0E7596008EE40B8  harness/acpx/upstream-r036/queue-cli-owner-capability.test.ts' | sha256sum -c -
+          echo '3E313386E8FCD67D015DB887E977071BA3ADA76BED7889BF675233E9E53EC2F3  harness/acpx/upstream-r038/queue-cli-stale-owner.test.ts' | sha256sum -c -
+          echo '6CA2BD589712F6BF6C69A61C01B8F868A0DCD1A7FBAFEEC76C867B2C2B3311B5  patches/acpx-cli-stale-owner-r038.patch' | sha256sum -c -
 
       - name: Install frozen upstream dependencies without lifecycle scripts
         shell: bash
@@ -74,7 +76,8 @@ jobs:
           test "$(git -C upstream diff --name-only | wc -l)" -eq 14
           git -C upstream diff --check
           cp harness/acpx/upstream-r036/*.test.ts upstream/test/
-          test "$(git -C upstream ls-files --others --exclude-standard | wc -l)" -eq 3
+          cp harness/acpx/upstream-r038/queue-cli-stale-owner.test.ts upstream/test/
+          test "$(git -C upstream ls-files --others --exclude-standard | wc -l)" -eq 4
           mkdir -p evidence
 
       - name: Compile public candidate and portable tests
@@ -86,40 +89,70 @@ jobs:
           test -s upstream/dist-test/test/cli-config-model-intent.test.js
           test -s upstream/dist-test/test/cli-config-opaque-value.test.js
           test -s upstream/dist-test/test/queue-cli-owner-capability.test.js
+          test -s upstream/dist-test/test/queue-cli-stale-owner.test.js
 
-      - name: Run 14 focused upstream-format regression tests
+      - name: Prove base candidate's stale-owner refusal is reproduced
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          (cd upstream && node --test --test-reporter=tap dist-test/test/queue-cli-stale-owner.test.js) > evidence/acpx-r038-before.tap 2>&1
+          status=$?
+          set -e
+          test "$status" -ne 0 || { echo "HOLD: R038 regression no longer reproduces on R033 base"; exit 1; }
+          grep -Fqx '# tests 3' evidence/acpx-r038-before.tap
+          grep -Fqx '# pass 1' evidence/acpx-r038-before.tap
+          grep -Fqx '# fail 2' evidence/acpx-r038-before.tap
+          grep -F 'Running queue owner does not support CLI config option intent' evidence/acpx-r038-before.tap
+          echo "R038_BASELINE_REPRODUCED: two stale owner regression assertions failed as expected"
+
+      - name: Apply narrowly scoped stale-owner reconciliation overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C upstream apply --check ../patches/acpx-cli-stale-owner-r038.patch
+          git -C upstream apply ../patches/acpx-cli-stale-owner-r038.patch
+          git -C upstream diff --check
+          test "$(git -C upstream diff --name-only | wc -l)" -eq 14
+          test "$(git -C upstream ls-files --others --exclude-standard | wc -l)" -eq 4
+          pnpm -C upstream run build
+          pnpm -C upstream run build:test
+          test -s upstream/dist-test/test/queue-cli-stale-owner.test.js
+
+      - name: Run 17 focused upstream-format regression tests
         shell: bash
         run: |
           set -euo pipefail
           (cd upstream && node --test --test-reporter=tap \
             dist-test/test/cli-config-model-intent.test.js \
             dist-test/test/cli-config-opaque-value.test.js \
-            dist-test/test/queue-cli-owner-capability.test.js) > evidence/acpx-r036-tests.tap 2>&1 || { tail -n 120 evidence/acpx-r036-tests.tap; exit 1; }
-          grep -Fqx '# tests 14' evidence/acpx-r036-tests.tap
-          grep -Fqx '# pass 14' evidence/acpx-r036-tests.tap
-          grep -Fqx '# fail 0' evidence/acpx-r036-tests.tap
-          grep -Fqx '# cancelled 0' evidence/acpx-r036-tests.tap
-          tail -n 22 evidence/acpx-r036-tests.tap
+            dist-test/test/queue-cli-owner-capability.test.js \
+            dist-test/test/queue-cli-stale-owner.test.js) > evidence/acpx-r038-tests.tap 2>&1 || { tail -n 140 evidence/acpx-r038-tests.tap; exit 1; }
+          grep -Fqx '# tests 17' evidence/acpx-r038-tests.tap
+          grep -Fqx '# pass 17' evidence/acpx-r038-tests.tap
+          grep -Fqx '# fail 0' evidence/acpx-r038-tests.tap
+          grep -Fqx '# cancelled 0' evidence/acpx-r038-tests.tap
+          tail -n 22 evidence/acpx-r038-tests.tap
 
       - name: Complete maintained upstream checks with portable tests
         shell: bash
         run: |
           set -euo pipefail
-          (cd upstream && pnpm run check) > evidence/acpx-r036-upstream-check.log 2>&1 || { tail -n 140 evidence/acpx-r036-upstream-check.log; exit 1; }
-          tail -n 32 evidence/acpx-r036-upstream-check.log
+          (cd upstream && pnpm run check) > evidence/acpx-r038-upstream-check.log 2>&1 || { tail -n 140 evidence/acpx-r038-upstream-check.log; exit 1; }
+          tail -n 32 evidence/acpx-r038-upstream-check.log
 
       - name: Verify built CLI entrypoint is available
         shell: bash
         run: |
           set -euo pipefail
-          node upstream/dist/cli.js --help > evidence/acpx-r036-cli-help.txt
-          test -s evidence/acpx-r036-cli-help.txt
+          node upstream/dist/cli.js --help > evidence/acpx-r038-cli-help.txt
+          test -s evidence/acpx-r038-cli-help.txt
 
       - name: Upload scoped evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: acpx-upstream-format-r036-evidence
+          name: acpx-upstream-stale-r038-evidence
           path: evidence/*
           if-no-files-found: warn
           retention-days: 7

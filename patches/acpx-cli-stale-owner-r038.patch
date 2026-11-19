@@ -1,0 +1,33 @@
+diff --git a/src/session/queue/ipc.ts b/src/session/queue/ipc.ts
+index 19bdc2c..5912056 100644
+--- a/src/session/queue/ipc.ts
++++ b/src/session/queue/ipc.ts
+@@ -637,13 +637,21 @@ async function submitSetConfigOptionToQueueOwner(
+   assertDispatch?: () => void,
+   cliModelInput?: true,
+ ): Promise<SetSessionConfigOptionResponse | undefined> {
+-  // Older owners cannot parse the dedicated CLI control kind. Refuse locally
+-  // before writing to their socket; never downgrade to the legacy request.
+-  if (cliModelInput === true && owner.supportsCliConfigOptionIntent !== true) {
+-    throw new QueueConnectionError(
+-      "Running queue owner does not support CLI config option intent; close the session before retrying",
+-      { detailCode: "QUEUE_CLI_CONFIG_OWNER_UNSUPPORTED", origin: "queue", retryable: false },
+-    );
++  // Only the dedicated CLI control needs the newer queue protocol. Reconcile a
++  // stale owner first: an abandoned old lease is not a live incompatibility.
++  // Resolution is generation-scoped; never downgrade or replay an admitted request.
++  if (cliModelInput === true) {
++    const currentOwner = await resolveUsableQueueOwner(owner.sessionId, owner);
++    if (!currentOwner) {
++      return undefined;
++    }
++    owner = currentOwner;
++    if (owner.supportsCliConfigOptionIntent !== true) {
++      throw new QueueConnectionError(
++        "Running queue owner does not support CLI config option intent; close the session before retrying",
++        { detailCode: "QUEUE_CLI_CONFIG_OWNER_UNSUPPORTED", origin: "queue", retryable: false },
++      );
++    }
+   }
+   const request: QueueSetConfigOptionRequest | QueueSetCliConfigOptionRequest = {
+     type: cliModelInput === true ? "set_cli_config_option" : "set_config_option",
