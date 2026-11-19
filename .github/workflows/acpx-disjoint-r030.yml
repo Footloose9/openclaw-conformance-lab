@@ -176,11 +176,24 @@ jobs:
           node upstream/dist/cli.js --help > evidence/acpx-r042-cli-help.txt
           test -s evidence/acpx-r042-cli-help.txt
 
+      - name: Verify patched source matches exact upstream PR Git tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream rev-parse HEAD)" = "48c1615057ae43893f80868f81cd3ee0445eb0ae"
+          git -C upstream diff --check
+          git -C upstream add -A
+          git -C upstream diff --cached --check
+          test -z "$(git -C upstream diff --name-only)"
+          test -z "$(git -C upstream ls-files --others --exclude-standard)"
+          test "$(git -C upstream write-tree)" = "6a783ebc7247a7643dc4c61a3f0a86e6b2a47b7b"
+          echo "R050_SOURCE_TREE_EQUALS_UPSTREAM_PR_1038"
+
       - name: Verify pinned published predecessor and R050 source harness
         shell: bash
         run: |
           set -euo pipefail
-          echo '036AD9286D4F33DE9D9ADEF32038A2AD770A5DA25F18E03DB1D9E168402CD0F8  harness/acpx/shipped-cli-r050.cjs' | sha256sum -c -
+          echo 'D3A94A4A1A797A87F2E499C83008E4A954ECD1F74F4CE0EC4FCB0C01ECDA0171  harness/acpx/shipped-cli-r050.cjs' | sha256sum -c -
           actual="$(npm view acpx@0.22.0 dist.integrity --json | node -e 'const fs=require("fs");const v=JSON.parse(fs.readFileSync(0,"utf8"));process.stdout.write(Array.isArray(v)?v[0]:v)')"
           test "$actual" = "sha512-dD+xgRwLFOfwL7/VEdn3zrVNFleFoIA0EUETK35w/e+MeYB5FN5+vKERoV60d4SUirTqX610yb/wN+2OFcjpMQ=="
           npm install --prefix oldpkg --ignore-scripts --no-audit --no-fund --no-save --package-lock=false acpx@0.22.0
@@ -192,7 +205,9 @@ jobs:
           set -euo pipefail
           node harness/acpx/shipped-cli-r050.cjs upstream oldpkg/node_modules/acpx evidence/acpx-r050-shipped-cli-linux.json
           node -e 'const j=require("./evidence/acpx-r050-shipped-cli-linux.json");const a=j.scenarios.flatMap(s=>s.steps.map(x=>x.exit));if(!j.successful||j.scenarios.length!==3||j.scenarios.some(s=>!s.passed)||a.length!==24||a.filter(x=>x===1).length!==1||a.filter(x=>x===0).length!==23)process.exit(1);console.log("R050_SHIPPED_CLI_PASS: 3 scenarios, 23 ordinary successes, 1 expected defensive refusal")'
-          test -z "$(git -C upstream status --porcelain)"
+          test "$(git -C upstream write-tree)" = "6a783ebc7247a7643dc4c61a3f0a86e6b2a47b7b"
+          test -z "$(git -C upstream diff --name-only)"
+          test -z "$(git -C upstream ls-files --others --exclude-standard)"
           sha256sum evidence/acpx-r050-shipped-cli-linux.json
 
       - name: Upload scoped evidence

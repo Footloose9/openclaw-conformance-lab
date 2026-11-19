@@ -12,8 +12,17 @@ const source = path.resolve(sourceArg);
 const oldPackage = path.resolve(oldArg);
 const output = path.resolve(outputArg);
 const expected = "613e95c641a623d51710b8ee7b3ad954b3ae66b4";
-const head = cp.execFileSync("git", ["-C", source, "rev-parse", "HEAD"], {encoding:"utf8"}).trim();
-assert.equal(head, expected, "Test only the reviewed PR head");
+const base = "48c1615057ae43893f80868f81cd3ee0445eb0ae";
+const expectedTree = "6a783ebc7247a7643dc4c61a3f0a86e6b2a47b7b";
+const git = (...args) => cp.execFileSync("git", ["-C", source, ...args], {encoding:"utf8"}).trim();
+const head = git("rev-parse", "HEAD");
+assert(head === expected || head === base, "Checkout is neither reviewed PR nor pinned base");
+const actualTree = head === expected ? git("rev-parse", "HEAD^{tree}") : git("write-tree");
+assert.equal(actualTree, expectedTree, "Git tree does not match the reviewed PR");
+if (head === base) {
+  assert.equal(git("diff", "--name-only"), "", "Unstaged source edits are not qualified");
+  assert.equal(git("ls-files", "--others", "--exclude-standard"), "", "Unexpected untracked source");
+}
 const oldManifest = JSON.parse(fs.readFileSync(path.join(oldPackage,"package.json"),"utf8"));
 assert.equal(oldManifest.name,"acpx");
 assert.equal(oldManifest.version,"0.22.0");
@@ -24,6 +33,8 @@ for (const file of [oldCli,newCli,mock]) assert(fs.statSync(file).isFile(), "Req
 const report = {
   schema:"acpx-linux-shipped-cli-r050.v1",
   sourceHead:expected,
+  sourceTree:expectedTree,
+  checkoutHead:head,
   predecessor:"acpx@0.22.0",
   adapter:"ACPX repository mock agent (no external provider)",
   platform:process.platform,
