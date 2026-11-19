@@ -41,24 +41,43 @@ test(
       try {
         assert.equal((await readQueueOwnerRecord(sessionId))?.supportsCliConfigOptionIntent, true);
         const approved = await trySetConfigOptionOnRunningOwner(
-          sessionId, "verbosity", " compact ", 2000, false, undefined, true,
+          sessionId,
+          "verbosity",
+          " compact ",
+          2000,
+          false,
+          undefined,
+          true,
         );
         assert.deepEqual(approved?.value, { configOptions: [] });
-        assert.deepEqual(calls, [{ configId: "verbosity", value: " compact ", cliModelInput: true }]);
+        assert.deepEqual(calls, [
+          { configId: "verbosity", value: " compact ", cliModelInput: true },
+        ]);
 
         const baseline = JSON.parse(initial) as Record<string, unknown>;
         for (const variant of [undefined, false, "true", 1, null]) {
           const edited = { ...baseline, supportsCliConfigOptionIntent: variant };
           await fs.writeFile(lease.lockPath, JSON.stringify(edited) + "\n", "utf8");
-          assert.equal((await readQueueOwnerRecord(sessionId))?.supportsCliConfigOptionIntent, undefined);
+          assert.equal(
+            (await readQueueOwnerRecord(sessionId))?.supportsCliConfigOptionIntent,
+            undefined,
+          );
           await assert.rejects(
             trySetConfigOptionOnRunningOwner(
-              sessionId, "verbosity", " compact ", 2000, false, undefined, true,
+              sessionId,
+              "verbosity",
+              " compact ",
+              2000,
+              false,
+              undefined,
+              true,
             ),
             (error: unknown) => {
               assert.ok(error instanceof Error);
-              assert.equal((error as Error & { detailCode?: string }).detailCode,
-                "QUEUE_CLI_CONFIG_OWNER_UNSUPPORTED");
+              assert.equal(
+                (error as Error & { detailCode?: string }).detailCode,
+                "QUEUE_CLI_CONFIG_OWNER_UNSUPPORTED",
+              );
               return true;
             },
           );
@@ -84,29 +103,43 @@ test(
       let seen = 0;
       const server = createSingleRequestServer((socket, _request) => {
         seen += 1;
-        socket.end(JSON.stringify({
-          type: "error",
-          requestId: "unknown",
-          ownerGeneration,
-          code: "RUNTIME",
-          detailCode: "QUEUE_REQUEST_INVALID",
-          origin: "queue",
-          retryable: false,
-          message: "Invalid queue request",
-        }) + "\n");
+        socket.end(
+          JSON.stringify({
+            type: "error",
+            requestId: "unknown",
+            ownerGeneration,
+            code: "RUNTIME",
+            detailCode: "QUEUE_REQUEST_INVALID",
+            origin: "queue",
+            retryable: false,
+            message: "Invalid queue request",
+          }) + "\n",
+        );
       });
       await listenServer(server, paths.socketPath);
       try {
         await writeQueueOwnerLock({
-          ...paths, pid: process.pid, sessionId, ownerGeneration,
+          ...paths,
+          pid: process.pid,
+          sessionId,
+          ownerGeneration,
         });
-        const payload = JSON.parse(await fs.readFile(paths.lockPath, "utf8")) as Record<string, unknown>;
+        const payload = JSON.parse(await fs.readFile(paths.lockPath, "utf8")) as Record<
+          string,
+          unknown
+        >;
         payload.supportsCliConfigOptionIntent = true;
         await fs.writeFile(paths.lockPath, JSON.stringify(payload) + "\n", "utf8");
 
         await assert.rejects(
           trySetConfigOptionOnRunningOwner(
-            sessionId, "engine", " model-b ", 2000, false, undefined, true,
+            sessionId,
+            "engine",
+            " model-b ",
+            2000,
+            false,
+            undefined,
+            true,
           ),
           (error: unknown) => {
             assert.ok(error instanceof Error);

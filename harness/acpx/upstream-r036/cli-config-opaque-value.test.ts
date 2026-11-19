@@ -13,19 +13,14 @@ async function parseSyntheticSet(parts: string[]): Promise<{ key: string; value:
   app.configureOutput({ writeOut: () => {}, writeErr: () => {} });
 
   const agent = app.command("synthetic");
-  registerSharedAgentSubcommands(
-    agent,
-    "synthetic",
-    {} as ResolvedAcpxConfig,
-    {
-      prompt: "synthetic prompt",
-      exec: "synthetic exec",
-      cancel: "synthetic cancel",
-      setMode: "synthetic mode",
-      setConfig: "synthetic config",
-      status: "synthetic status",
-    },
-  );
+  registerSharedAgentSubcommands(agent, "synthetic", {} as ResolvedAcpxConfig, {
+    prompt: "synthetic prompt",
+    exec: "synthetic exec",
+    cancel: "synthetic cancel",
+    setMode: "synthetic mode",
+    setConfig: "synthetic config",
+    status: "synthetic status",
+  });
   const setCommand = agent.commands.find((command) => command.name() === "set");
   assert.ok(setCommand, "real ACPX set command must be registered");
   let captured: { key: string; value: string } | undefined;

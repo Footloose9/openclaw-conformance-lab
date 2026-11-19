@@ -53,9 +53,9 @@ jobs:
           set -euo pipefail
           echo '31D4D280E9702F5C3710B44C168093C74ADF886063B44769CDC57A3A22C911C4  patches/acpx-cli-model-intent-r030.patch' | sha256sum -c -
           echo '20FF8DDEB76AC4D52DF568367E2C838AFB37FEC4866C13E3C7EEEB1776FB97E6  patches/acpx-cli-owner-capability-r033.patch' | sha256sum -c -
-          echo '95607B5E8E2614B23D64E77EFEA00108F4F23793AB054D5F37A8AC069DF7BF0D  harness/acpx/upstream-r036/cli-config-model-intent.test.ts' | sha256sum -c -
-          echo 'D7DBE75447B752C2CC76397AB51F2675D972017EFBC8D9FE9F8DC5D685E5BD09  harness/acpx/upstream-r036/cli-config-opaque-value.test.ts' | sha256sum -c -
-          echo 'B479BAD3961488A601CD2B8E5E1D97DAFEDDC09764DA8F6009CA5E0264076982  harness/acpx/upstream-r036/queue-cli-owner-capability.test.ts' | sha256sum -c -
+          echo '5742BB2D02CAB5B697CECE8A6ADF550D256DF8762752D1800901AED3D522AE0C  harness/acpx/upstream-r036/cli-config-model-intent.test.ts' | sha256sum -c -
+          echo 'A976096E70870B2FAE3B3F095EA4EF02A5D5E2183C267117539E75568A048A89  harness/acpx/upstream-r036/cli-config-opaque-value.test.ts' | sha256sum -c -
+          echo 'E7B682B774B17B3ACD26821D706CC939D0D612894DB9988AF0E7596008EE40B8  harness/acpx/upstream-r036/queue-cli-owner-capability.test.ts' | sha256sum -c -
 
       - name: Install frozen upstream dependencies without lifecycle scripts
         shell: bash
