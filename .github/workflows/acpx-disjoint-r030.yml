@@ -181,6 +181,11 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C upstream rev-parse HEAD)" = "48c1615057ae43893f80868f81cd3ee0445eb0ae"
+          git -C upstream fetch --quiet --no-tags --depth=1 https://github.com/Footloose9/acpx.git 613e95c641a623d51710b8ee7b3ad954b3ae66b4
+          test "$(git -C upstream rev-parse FETCH_HEAD)" = "613e95c641a623d51710b8ee7b3ad954b3ae66b4"
+          git -C upstream show FETCH_HEAD:CHANGELOG.md > upstream/CHANGELOG.md
+          echo 'D475D57C59DB64CD660E4ADE805393BA39084A1E067D8227000126BF9AFA94DD  upstream/CHANGELOG.md' | sha256sum -c -
+          test "$(git -C upstream hash-object CHANGELOG.md)" = "d63e33f1382024c7cbb5eb1c814ce0289eb04d2b"
           git -C upstream diff --check
           git -C upstream add -A
           git -C upstream diff --cached --check
