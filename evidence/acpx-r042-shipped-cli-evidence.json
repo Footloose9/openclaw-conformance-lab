@@ -1,0 +1,171 @@
+{
+  "schema": "acpx.synthetic-cli-evidence.v1",
+  "provenance": {
+    "upstreamIssue": "https://github.com/openclaw/acpx/issues/1005",
+    "upstreamPR": "https://github.com/openclaw/acpx/pull/1038",
+    "testedRevision": "613e95c641a623d51710b8ee7b3ad954b3ae66b4",
+    "previousRevision": "11245ab7f22bafbde56377e770466c8be9e92821",
+    "publicLinuxQualification": "https://github.com/Footloose9/openclaw-conformance-lab/actions/runs/44457625530",
+    "publicLinuxTestResult": "18 of 18 focused tests and full pnpm run check passed"
+  },
+  "environment": {
+    "platform": "Windows",
+    "node": "24.19.0",
+    "previousPackage": "acpx@0.22.0",
+    "newCli": "compiled source CLI",
+    "adapter": "ACPX repository synthetic mock agent",
+    "isolation": "fresh disposable HOME and project directories"
+  },
+  "scenarios": [
+    {
+      "id": "direct-cli",
+      "receiptSha256": "B70E866384A09D466AD702D833B7B5511A8013DDB3FE59B2D41F45C279A1BE32",
+      "passed": true,
+      "expectedActual": {
+        "paddedNonModelValue": " high ",
+        "storedWithoutTrimming": true,
+        "modelSelectorSubmitted": " fast-model ",
+        "resolvedModelId": "fast-model",
+        "sourceCheckoutClean": true
+      },
+      "commands": [
+        {
+          "operation": "version",
+          "exitCode": 0
+        },
+        {
+          "operation": "create",
+          "exitCode": 0
+        },
+        {
+          "operation": "set-padded",
+          "exitCode": 0
+        },
+        {
+          "operation": "show-padded",
+          "exitCode": 0
+        },
+        {
+          "operation": "set-model",
+          "exitCode": 0
+        },
+        {
+          "operation": "show-model",
+          "exitCode": 0
+        },
+        {
+          "operation": "close",
+          "exitCode": 0
+        }
+      ]
+    },
+    {
+      "id": "published-package-upgrade",
+      "receiptSha256": "AF5DA08984463C1E84FBB9CFCD2FFB5F7B12020FA1F932DA95E1D91C315AB3AC",
+      "passed": true,
+      "expectedActual": {
+        "publishedSessionRecordIdPreserved": true,
+        "savedEffortBefore": "high",
+        "savedEffortAfterUpgrade": "high",
+        "savedModelBefore": "fast-model",
+        "savedModelAfterUpgrade": "fast-model",
+        "paddedFollowupValue": " high ",
+        "modelAfterFollowup": "fast-model"
+      },
+      "commands": [
+        {
+          "operation": "old-version",
+          "exitCode": 0
+        },
+        {
+          "operation": "new-version",
+          "exitCode": 0
+        },
+        {
+          "operation": "old-create",
+          "exitCode": 0
+        },
+        {
+          "operation": "old-set-model",
+          "exitCode": 0
+        },
+        {
+          "operation": "old-set-effort",
+          "exitCode": 0
+        },
+        {
+          "operation": "old-show",
+          "exitCode": 0
+        },
+        {
+          "operation": "new-show-existing",
+          "exitCode": 0
+        },
+        {
+          "operation": "new-set-padded",
+          "exitCode": 0
+        },
+        {
+          "operation": "new-show-changed",
+          "exitCode": 0
+        },
+        {
+          "operation": "close",
+          "exitCode": 0
+        }
+      ]
+    },
+    {
+      "id": "published-retained-owner",
+      "receiptSha256": "DDECFF6CBA4EA2C30D159BC6FF7A1C50F084D5FBCB663AEC0B092091202AE2DB",
+      "passed": true,
+      "expectedActual": {
+        "oldOwnerCapabilityAbsent": true,
+        "paddedRequestRefusedWithoutDispatch": true,
+        "paddedRefusalExitCode": 1,
+        "ordinaryControl": "reasoning_effort=high",
+        "ordinaryControlLegacyProtocolAccepted": true,
+        "olderOwnerPidAndGenerationUnchanged": true,
+        "sessionRecordIdPreserved": true,
+        "cleanShutdown": true
+      },
+      "commands": [
+        {
+          "operation": "old-create",
+          "exitCode": 0
+        },
+        {
+          "operation": "old-show",
+          "exitCode": 0
+        },
+        {
+          "operation": "old-background-prompt",
+          "exitCode": 0
+        },
+        {
+          "operation": "new-reject-padded",
+          "exitCode": 1
+        },
+        {
+          "operation": "new-legacy-plain",
+          "exitCode": 0
+        },
+        {
+          "operation": "new-show",
+          "exitCode": 0
+        },
+        {
+          "operation": "new-close",
+          "exitCode": 0
+        }
+      ]
+    }
+  ],
+  "importantLimits": [
+    "No real provider authentication or production agent test was performed.",
+    "The expected exit code 1 in the retained-owner scenario is a controlled refusal, not an unintended failure.",
+    "Raw private logs were not published; source-receipt SHA-256 values support private custody checks but do not allow public reconstruction of their contents.",
+    "The complete Linux workflow covers the source patch and portable regressions independently of the Windows process-level demonstrations.",
+    "The R042 compatibility fallback is limited to byte-identical unpadded values and does not replay an admitted queue request."
+  ]
+}
