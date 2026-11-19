@@ -16,7 +16,7 @@ function catalog(configId: string, ids = ["model-a", "model-b"]) {
       name: "Synthetic model selector",
       type: "select",
       category: "model",
-      currentValue: ids[0]!,
+      currentValue: ids[0],
       options: ids.map((value) => ({ value, name: value })),
     },
   ]);
