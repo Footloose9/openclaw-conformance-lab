@@ -1,0 +1,96 @@
+name: ACPX R050 published CLI mixed-version qualification (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acpx-shipped-cli-r050
+  cancel-in-progress: false
+
+jobs:
+  published-cli:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      GIT_TERMINAL_PROMPT: "0"
+      NODE_OPTIONS: --max-old-space-size=2048
+    steps:
+      - name: Checkout public conformance harness without write credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Setup pinned Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          check-latest: false
+
+      - name: Verify harness source and package integrity declaration
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '036AD9286D4F33DE9D9ADEF32038A2AD770A5DA25F18E03DB1D9E168402CD0F8  harness/acpx/shipped-cli-r050.cjs' | sha256sum -c -
+          actual="$(npm view acpx@0.22.0 dist.integrity --json | node -e 'const fs=require("fs");const v=JSON.parse(fs.readFileSync(0,"utf8"));process.stdout.write(Array.isArray(v)?v[0]:v)')"
+          test "$actual" = "sha512-dD+xgRwLFOfwL7/VEdn3zrVNFleFoIA0EUETK35w/e+MeYB5FN5+vKERoV60d4SUirTqX610yb/wN+2OFcjpMQ=="
+
+      - name: Fetch exact reviewed ACPX PR source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth=1 --filter=blob:none --no-checkout https://github.com/Footloose9/acpx.git upstream
+          git -C upstream fetch --quiet --depth=1 origin 613e95c641a623d51710b8ee7b3ad954b3ae66b4
+          git -C upstream checkout --quiet --detach 613e95c641a623d51710b8ee7b3ad954b3ae66b4
+          test "$(git -C upstream rev-parse HEAD)" = "613e95c641a623d51710b8ee7b3ad954b3ae66b4"
+          test "$(git -C upstream rev-parse HEAD^{tree})" = "6a783ebc7247a7643dc4c61a3f0a86e6b2a47b7b"
+          test -z "$(git -C upstream status --porcelain)"
+
+      - name: Install published predecessor and frozen source dependencies without scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g --ignore-scripts --no-audit --no-fund pnpm@11.27.1
+          test "$(pnpm --version)" = "11.27.1"
+          pnpm -C upstream install --frozen-lockfile --ignore-scripts
+          npm install --prefix oldpkg --ignore-scripts --no-audit --no-fund --no-save --package-lock=false acpx@0.22.0
+          node -e 'const p=require("./oldpkg/node_modules/acpx/package.json");if(p.version!=="0.22.0")process.exit(1)'
+
+      - name: Build corrected CLI and synthetic ACP adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm -C upstream run build
+          pnpm -C upstream run build:test
+          test -s upstream/dist/cli.js
+          test -s upstream/dist-test/test/mock-agent.js
+
+      - name: Exercise published and corrected CLI processes against synthetic ACP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          node harness/acpx/shipped-cli-r050.cjs upstream oldpkg/node_modules/acpx evidence/r050-shipped-cli-linux.json
+          node - <<'NODE'
+          const fs=require("node:fs");
+          const j=JSON.parse(fs.readFileSync("evidence/r050-shipped-cli-linux.json","utf8"));
+          if(!j.successful || j.scenarios.length!==3)process.exit(1);
+          if(j.scenarios.some(s=>!s.passed))process.exit(2);
+          const codes=j.scenarios.flatMap(s=>s.steps.map(x=>x.exit));
+          if(codes.length!==24 || codes.filter(x=>x===1).length!==1 || codes.filter(x=>x===0).length!==23)process.exit(3);
+          console.log("R050_PROOF_PASS 3 scenarios; 23 successful commands; 1 expected defensive refusal");
+          NODE
+          test -z "$(git -C upstream status --porcelain)"
+          sha256sum evidence/r050-shipped-cli-linux.json
+
+      - name: Upload redacted synthetic outcome evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: acpx-r050-shipped-cli-linux
+          path: evidence/*.json
+          if-no-files-found: warn
+          retention-days: 7
