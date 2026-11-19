@@ -1,0 +1,1391 @@
+{
+  "schema": "acpx-r051-captured-cli-output.v1",
+  "description": "Real compiled CLI stdout/stderr captured against the ACPX synthetic mock adapter, with ephemeral identities, paths and unrelated metadata redacted. Not a wire-level ACP packet capture.",
+  "provenance": {
+    "oldPackage": "acpx@0.22.0",
+    "reviewedHead": "613e95c641a623d51710b8ee7b3ad954b3ae66b4",
+    "platform": "Windows",
+    "node": "24.19.0",
+    "localPrivateCaptureSha256": "F39A291285B4A026D2BFF847866FED604BA4FE1CD17994246FF5C0D884C12210",
+    "executedCaptureRunnerSha256": "2B1306CCACA4E4E8AE38C39B06D50CCD1ECF8676F01730A3FE03CB870942E921",
+    "linuxSourceQualification": "https://github.com/Footloose9/openclaw-conformance-lab/actions/runs/44457625530"
+  },
+  "commandOutcomes": {
+    "scenarios": 3,
+    "operations": 24,
+    "successful": 23,
+    "expectedDefensiveRefusals": 1
+  },
+  "captures": [
+    {
+      "scenario": "direct",
+      "step": "set-padded",
+      "exit": 0,
+      "cliStdout": {
+        "action": "config_set",
+        "configId": "reasoning_effort",
+        "value": " high ",
+        "resumed": false,
+        "configOptions": [
+          {
+            "id": "mode",
+            "name": "Session Mode",
+            "category": "mode",
+            "type": "select",
+            "currentValue": "auto",
+            "options": [
+              {
+                "value": "read-only",
+                "name": "Read Only"
+              },
+              {
+                "value": "auto",
+                "name": "Default"
+              },
+              {
+                "value": "full-access",
+                "name": "Full Access"
+              },
+              {
+                "value": "plan",
+                "name": "Plan"
+              },
+              {
+                "value": "default",
+                "name": "Default"
+              }
+            ]
+          },
+          {
+            "id": "model",
+            "name": "Model",
+            "category": "model",
+            "type": "select",
+            "currentValue": "default-model",
+            "options": [
+              {
+                "value": "default-model",
+                "name": "default-model"
+              },
+              {
+                "value": "fast-model",
+                "name": "fast-model"
+              },
+              {
+                "value": "smart-model",
+                "name": "smart-model"
+              },
+              {
+                "value": "gpt-5.4",
+                "name": "gpt-5.4"
+              },
+              {
+                "value": "gpt-5.2",
+                "name": "gpt-5.2"
+              }
+            ]
+          },
+          {
+            "id": "reasoning_effort",
+            "name": "Reasoning Effort",
+            "category": "thought_level",
+            "type": "select",
+            "currentValue": " high ",
+            "options": [
+              {
+                "value": "low",
+                "name": "Low"
+              },
+              {
+                "value": "medium",
+                "name": "Medium"
+              },
+              {
+                "value": "high",
+                "name": "High"
+              },
+              {
+                "value": "xhigh",
+                "name": "Xhigh"
+              }
+            ]
+          }
+        ],
+        "acpxRecordId": "<REDACTED>",
+        "acpxSessionId": "<REDACTED>"
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "direct",
+      "step": "show-padded",
+      "exit": 0,
+      "cliStdout": {
+        "schema": "acpx.session.v1",
+        "acpxRecordId": "<REDACTED>",
+        "acpSessionId": "<REDACTED>",
+        "agentCommand": "<REDACTED>",
+        "agentArgv": "<REDACTED>",
+        "cwd": "<REDACTED>",
+        "name": "direct",
+        "createdAt": "2026-11-19T04:45:21.598Z",
+        "lastUsedAt": "2026-11-19T04:45:38.216Z",
+        "lastSeq": 0,
+        "eventLog": "<REDACTED>",
+        "closed": false,
+        "agentStartedAt": "2026-11-19T04:45:33.623Z",
+        "lastAgentExitCode": null,
+        "lastAgentExitSignal": null,
+        "lastAgentExitAt": "2026-11-19T04:45:39.638Z",
+        "lastAgentDisconnectReason": "connection_close",
+        "protocolVersion": 1,
+        "agentCapabilities": {
+          "promptCapabilities": {
+            "image": true,
+            "audio": true,
+            "embeddedContext": true
+          }
+        },
+        "title": null,
+        "messages": "<REDACTED>",
+        "updated_at": "2026-11-19T04:45:21.598Z",
+        "cumulative_token_usage": {},
+        "request_token_usage": {},
+        "acpx": {
+          "session_origin": "new",
+          "desired_config_options": {
+            "reasoning_effort": " high "
+          },
+          "available_model_names": {
+            "default-model": "default-model",
+            "fast-model": "fast-model",
+            "smart-model": "smart-model",
+            "gpt-5.4": "gpt-5.4",
+            "gpt-5.2": "gpt-5.2"
+          },
+          "current_model_id": "default-model",
+          "available_models": [
+            "default-model",
+            "fast-model",
+            "smart-model",
+            "gpt-5.4",
+            "gpt-5.2"
+          ],
+          "model_control": "config_option",
+          "config_options": [
+            {
+              "id": "mode",
+              "name": "Session Mode",
+              "category": "mode",
+              "type": "select",
+              "currentValue": "auto",
+              "options": [
+                {
+                  "value": "read-only",
+                  "name": "Read Only"
+                },
+                {
+                  "value": "auto",
+                  "name": "Default"
+                },
+                {
+                  "value": "full-access",
+                  "name": "Full Access"
+                },
+                {
+                  "value": "plan",
+                  "name": "Plan"
+                },
+                {
+                  "value": "default",
+                  "name": "Default"
+                }
+              ]
+            },
+            {
+              "id": "model",
+              "name": "Model",
+              "category": "model",
+              "type": "select",
+              "currentValue": "default-model",
+              "options": [
+                {
+                  "value": "default-model",
+                  "name": "default-model"
+                },
+                {
+                  "value": "fast-model",
+                  "name": "fast-model"
+                },
+                {
+                  "value": "smart-model",
+                  "name": "smart-model"
+                },
+                {
+                  "value": "gpt-5.4",
+                  "name": "gpt-5.4"
+                },
+                {
+                  "value": "gpt-5.2",
+                  "name": "gpt-5.2"
+                }
+              ]
+            },
+            {
+              "id": "reasoning_effort",
+              "name": "Reasoning Effort",
+              "category": "thought_level",
+              "type": "select",
+              "currentValue": " high ",
+              "options": [
+                {
+                  "value": "low",
+                  "name": "Low"
+                },
+                {
+                  "value": "medium",
+                  "name": "Medium"
+                },
+                {
+                  "value": "high",
+                  "name": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "name": "Xhigh"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "direct",
+      "step": "set-model",
+      "exit": 0,
+      "cliStdout": {
+        "action": "model_set",
+        "modelId": "fast-model",
+        "resumed": false,
+        "acpxRecordId": "<REDACTED>",
+        "acpxSessionId": "<REDACTED>"
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "direct",
+      "step": "show-model",
+      "exit": 0,
+      "cliStdout": {
+        "schema": "acpx.session.v1",
+        "acpxRecordId": "<REDACTED>",
+        "acpSessionId": "<REDACTED>",
+        "agentCommand": "<REDACTED>",
+        "agentArgv": "<REDACTED>",
+        "cwd": "<REDACTED>",
+        "name": "direct",
+        "createdAt": "2026-11-19T04:45:21.598Z",
+        "lastUsedAt": "2026-11-19T04:45:53.084Z",
+        "lastSeq": 0,
+        "eventLog": "<REDACTED>",
+        "closed": false,
+        "agentStartedAt": "2026-11-19T04:45:49.788Z",
+        "lastAgentExitCode": null,
+        "lastAgentExitSignal": null,
+        "lastAgentExitAt": "2026-11-19T04:45:54.497Z",
+        "lastAgentDisconnectReason": "connection_close",
+        "protocolVersion": 1,
+        "agentCapabilities": {
+          "promptCapabilities": {
+            "image": true,
+            "audio": true,
+            "embeddedContext": true
+          }
+        },
+        "title": null,
+        "messages": "<REDACTED>",
+        "updated_at": "2026-11-19T04:45:21.598Z",
+        "cumulative_token_usage": {},
+        "request_token_usage": {},
+        "acpx": {
+          "session_origin": "new",
+          "desired_config_options": {
+            "reasoning_effort": "medium"
+          },
+          "available_model_names": {
+            "default-model": "default-model",
+            "fast-model": "fast-model",
+            "smart-model": "smart-model",
+            "gpt-5.4": "gpt-5.4",
+            "gpt-5.2": "gpt-5.2"
+          },
+          "current_model_id": "fast-model",
+          "available_models": [
+            "default-model",
+            "fast-model",
+            "smart-model",
+            "gpt-5.4",
+            "gpt-5.2"
+          ],
+          "model_control": "config_option",
+          "config_options": [
+            {
+              "id": "mode",
+              "name": "Session Mode",
+              "category": "mode",
+              "type": "select",
+              "currentValue": "auto",
+              "options": [
+                {
+                  "value": "read-only",
+                  "name": "Read Only"
+                },
+                {
+                  "value": "auto",
+                  "name": "Default"
+                },
+                {
+                  "value": "full-access",
+                  "name": "Full Access"
+                },
+                {
+                  "value": "plan",
+                  "name": "Plan"
+                },
+                {
+                  "value": "default",
+                  "name": "Default"
+                }
+              ]
+            },
+            {
+              "id": "model",
+              "name": "Model",
+              "category": "model",
+              "type": "select",
+              "currentValue": "fast-model",
+              "options": [
+                {
+                  "value": "default-model",
+                  "name": "default-model"
+                },
+                {
+                  "value": "fast-model",
+                  "name": "fast-model"
+                },
+                {
+                  "value": "smart-model",
+                  "name": "smart-model"
+                },
+                {
+                  "value": "gpt-5.4",
+                  "name": "gpt-5.4"
+                },
+                {
+                  "value": "gpt-5.2",
+                  "name": "gpt-5.2"
+                }
+              ]
+            },
+            {
+              "id": "reasoning_effort",
+              "name": "Reasoning Effort",
+              "category": "thought_level",
+              "type": "select",
+              "currentValue": "medium",
+              "options": [
+                {
+                  "value": "low",
+                  "name": "Low"
+                },
+                {
+                  "value": "medium",
+                  "name": "Medium"
+                },
+                {
+                  "value": "high",
+                  "name": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "name": "Xhigh"
+                }
+              ]
+            }
+          ],
+          "session_options": {
+            "model": "fast-model"
+          }
+        }
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "upgrade",
+      "step": "old-show",
+      "exit": 0,
+      "cliStdout": {
+        "schema": "acpx.session.v1",
+        "acpxRecordId": "<REDACTED>",
+        "acpSessionId": "<REDACTED>",
+        "agentCommand": "<REDACTED>",
+        "agentArgv": "<REDACTED>",
+        "cwd": "<REDACTED>",
+        "name": "upgrade",
+        "createdAt": "2026-11-19T04:46:12.234Z",
+        "lastUsedAt": "2026-11-19T04:46:36.882Z",
+        "lastSeq": 0,
+        "eventLog": "<REDACTED>",
+        "closed": false,
+        "agentStartedAt": "2026-11-19T04:46:32.701Z",
+        "lastAgentExitCode": null,
+        "lastAgentExitSignal": null,
+        "lastAgentExitAt": "2026-11-19T04:46:38.472Z",
+        "lastAgentDisconnectReason": "connection_close",
+        "protocolVersion": 1,
+        "agentCapabilities": {
+          "promptCapabilities": {
+            "image": true,
+            "audio": true,
+            "embeddedContext": true
+          }
+        },
+        "title": null,
+        "messages": "<REDACTED>",
+        "updated_at": "2026-11-19T04:46:12.234Z",
+        "cumulative_token_usage": {},
+        "request_token_usage": {},
+        "acpx": {
+          "session_origin": "new",
+          "desired_config_options": {
+            "reasoning_effort": "high"
+          },
+          "available_model_names": {
+            "default-model": "default-model",
+            "fast-model": "fast-model",
+            "smart-model": "smart-model",
+            "gpt-5.4": "gpt-5.4",
+            "gpt-5.2": "gpt-5.2"
+          },
+          "current_model_id": "fast-model",
+          "available_models": [
+            "default-model",
+            "fast-model",
+            "smart-model",
+            "gpt-5.4",
+            "gpt-5.2"
+          ],
+          "model_control": "config_option",
+          "config_options": [
+            {
+              "id": "mode",
+              "name": "Session Mode",
+              "category": "mode",
+              "type": "select",
+              "currentValue": "auto",
+              "options": [
+                {
+                  "value": "read-only",
+                  "name": "Read Only"
+                },
+                {
+                  "value": "auto",
+                  "name": "Default"
+                },
+                {
+                  "value": "full-access",
+                  "name": "Full Access"
+                },
+                {
+                  "value": "plan",
+                  "name": "Plan"
+                },
+                {
+                  "value": "default",
+                  "name": "Default"
+                }
+              ]
+            },
+            {
+              "id": "model",
+              "name": "Model",
+              "category": "model",
+              "type": "select",
+              "currentValue": "fast-model",
+              "options": [
+                {
+                  "value": "default-model",
+                  "name": "default-model"
+                },
+                {
+                  "value": "fast-model",
+                  "name": "fast-model"
+                },
+                {
+                  "value": "smart-model",
+                  "name": "smart-model"
+                },
+                {
+                  "value": "gpt-5.4",
+                  "name": "gpt-5.4"
+                },
+                {
+                  "value": "gpt-5.2",
+                  "name": "gpt-5.2"
+                }
+              ]
+            },
+            {
+              "id": "reasoning_effort",
+              "name": "Reasoning Effort",
+              "category": "thought_level",
+              "type": "select",
+              "currentValue": "high",
+              "options": [
+                {
+                  "value": "low",
+                  "name": "Low"
+                },
+                {
+                  "value": "medium",
+                  "name": "Medium"
+                },
+                {
+                  "value": "high",
+                  "name": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "name": "Xhigh"
+                }
+              ]
+            }
+          ],
+          "session_options": {
+            "model": "fast-model"
+          }
+        }
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "upgrade",
+      "step": "new-show-existing",
+      "exit": 0,
+      "cliStdout": {
+        "schema": "acpx.session.v1",
+        "acpxRecordId": "<REDACTED>",
+        "acpSessionId": "<REDACTED>",
+        "agentCommand": "<REDACTED>",
+        "agentArgv": "<REDACTED>",
+        "cwd": "<REDACTED>",
+        "name": "upgrade",
+        "createdAt": "2026-11-19T04:46:12.234Z",
+        "lastUsedAt": "2026-11-19T04:46:36.882Z",
+        "lastSeq": 0,
+        "eventLog": "<REDACTED>",
+        "closed": false,
+        "agentStartedAt": "2026-11-19T04:46:32.701Z",
+        "lastAgentExitCode": null,
+        "lastAgentExitSignal": null,
+        "lastAgentExitAt": "2026-11-19T04:46:38.472Z",
+        "lastAgentDisconnectReason": "connection_close",
+        "protocolVersion": 1,
+        "agentCapabilities": {
+          "promptCapabilities": {
+            "image": true,
+            "audio": true,
+            "embeddedContext": true
+          }
+        },
+        "title": null,
+        "messages": "<REDACTED>",
+        "updated_at": "2026-11-19T04:46:12.234Z",
+        "cumulative_token_usage": {},
+        "request_token_usage": {},
+        "acpx": {
+          "session_origin": "new",
+          "desired_config_options": {
+            "reasoning_effort": "high"
+          },
+          "available_model_names": {
+            "default-model": "default-model",
+            "fast-model": "fast-model",
+            "smart-model": "smart-model",
+            "gpt-5.4": "gpt-5.4",
+            "gpt-5.2": "gpt-5.2"
+          },
+          "current_model_id": "fast-model",
+          "available_models": [
+            "default-model",
+            "fast-model",
+            "smart-model",
+            "gpt-5.4",
+            "gpt-5.2"
+          ],
+          "model_control": "config_option",
+          "config_options": [
+            {
+              "id": "mode",
+              "name": "Session Mode",
+              "category": "mode",
+              "type": "select",
+              "currentValue": "auto",
+              "options": [
+                {
+                  "value": "read-only",
+                  "name": "Read Only"
+                },
+                {
+                  "value": "auto",
+                  "name": "Default"
+                },
+                {
+                  "value": "full-access",
+                  "name": "Full Access"
+                },
+                {
+                  "value": "plan",
+                  "name": "Plan"
+                },
+                {
+                  "value": "default",
+                  "name": "Default"
+                }
+              ]
+            },
+            {
+              "id": "model",
+              "name": "Model",
+              "category": "model",
+              "type": "select",
+              "currentValue": "fast-model",
+              "options": [
+                {
+                  "value": "default-model",
+                  "name": "default-model"
+                },
+                {
+                  "value": "fast-model",
+                  "name": "fast-model"
+                },
+                {
+                  "value": "smart-model",
+                  "name": "smart-model"
+                },
+                {
+                  "value": "gpt-5.4",
+                  "name": "gpt-5.4"
+                },
+                {
+                  "value": "gpt-5.2",
+                  "name": "gpt-5.2"
+                }
+              ]
+            },
+            {
+              "id": "reasoning_effort",
+              "name": "Reasoning Effort",
+              "category": "thought_level",
+              "type": "select",
+              "currentValue": "high",
+              "options": [
+                {
+                  "value": "low",
+                  "name": "Low"
+                },
+                {
+                  "value": "medium",
+                  "name": "Medium"
+                },
+                {
+                  "value": "high",
+                  "name": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "name": "Xhigh"
+                }
+              ]
+            }
+          ],
+          "session_options": {
+            "model": "fast-model"
+          }
+        }
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "upgrade",
+      "step": "new-set-padded",
+      "exit": 0,
+      "cliStdout": {
+        "action": "config_set",
+        "configId": "reasoning_effort",
+        "value": " high ",
+        "resumed": false,
+        "configOptions": [
+          {
+            "id": "mode",
+            "name": "Session Mode",
+            "category": "mode",
+            "type": "select",
+            "currentValue": "auto",
+            "options": [
+              {
+                "value": "read-only",
+                "name": "Read Only"
+              },
+              {
+                "value": "auto",
+                "name": "Default"
+              },
+              {
+                "value": "full-access",
+                "name": "Full Access"
+              },
+              {
+                "value": "plan",
+                "name": "Plan"
+              },
+              {
+                "value": "default",
+                "name": "Default"
+              }
+            ]
+          },
+          {
+            "id": "model",
+            "name": "Model",
+            "category": "model",
+            "type": "select",
+            "currentValue": "fast-model",
+            "options": [
+              {
+                "value": "default-model",
+                "name": "default-model"
+              },
+              {
+                "value": "fast-model",
+                "name": "fast-model"
+              },
+              {
+                "value": "smart-model",
+                "name": "smart-model"
+              },
+              {
+                "value": "gpt-5.4",
+                "name": "gpt-5.4"
+              },
+              {
+                "value": "gpt-5.2",
+                "name": "gpt-5.2"
+              }
+            ]
+          },
+          {
+            "id": "reasoning_effort",
+            "name": "Reasoning Effort",
+            "category": "thought_level",
+            "type": "select",
+            "currentValue": " high ",
+            "options": [
+              {
+                "value": "low",
+                "name": "Low"
+              },
+              {
+                "value": "medium",
+                "name": "Medium"
+              },
+              {
+                "value": "high",
+                "name": "High"
+              },
+              {
+                "value": "xhigh",
+                "name": "Xhigh"
+              }
+            ]
+          }
+        ],
+        "acpxRecordId": "<REDACTED>",
+        "acpxSessionId": "<REDACTED>"
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "upgrade",
+      "step": "new-show-changed",
+      "exit": 0,
+      "cliStdout": {
+        "schema": "acpx.session.v1",
+        "acpxRecordId": "<REDACTED>",
+        "acpSessionId": "<REDACTED>",
+        "agentCommand": "<REDACTED>",
+        "agentArgv": "<REDACTED>",
+        "cwd": "<REDACTED>",
+        "name": "upgrade",
+        "createdAt": "2026-11-19T04:46:12.234Z",
+        "lastUsedAt": "2026-11-19T04:46:48.157Z",
+        "lastSeq": 0,
+        "eventLog": "<REDACTED>",
+        "closed": false,
+        "agentStartedAt": "2026-11-19T04:46:45.288Z",
+        "lastAgentExitCode": null,
+        "lastAgentExitSignal": null,
+        "lastAgentExitAt": "2026-11-19T04:46:49.421Z",
+        "lastAgentDisconnectReason": "connection_close",
+        "protocolVersion": 1,
+        "agentCapabilities": {
+          "promptCapabilities": {
+            "image": true,
+            "audio": true,
+            "embeddedContext": true
+          }
+        },
+        "title": null,
+        "messages": "<REDACTED>",
+        "updated_at": "2026-11-19T04:46:12.234Z",
+        "cumulative_token_usage": {},
+        "request_token_usage": {},
+        "acpx": {
+          "session_origin": "new",
+          "desired_config_options": {
+            "reasoning_effort": " high "
+          },
+          "available_model_names": {
+            "default-model": "default-model",
+            "fast-model": "fast-model",
+            "smart-model": "smart-model",
+            "gpt-5.4": "gpt-5.4",
+            "gpt-5.2": "gpt-5.2"
+          },
+          "current_model_id": "fast-model",
+          "available_models": [
+            "default-model",
+            "fast-model",
+            "smart-model",
+            "gpt-5.4",
+            "gpt-5.2"
+          ],
+          "model_control": "config_option",
+          "config_options": [
+            {
+              "id": "mode",
+              "name": "Session Mode",
+              "category": "mode",
+              "type": "select",
+              "currentValue": "auto",
+              "options": [
+                {
+                  "value": "read-only",
+                  "name": "Read Only"
+                },
+                {
+                  "value": "auto",
+                  "name": "Default"
+                },
+                {
+                  "value": "full-access",
+                  "name": "Full Access"
+                },
+                {
+                  "value": "plan",
+                  "name": "Plan"
+                },
+                {
+                  "value": "default",
+                  "name": "Default"
+                }
+              ]
+            },
+            {
+              "id": "model",
+              "name": "Model",
+              "category": "model",
+              "type": "select",
+              "currentValue": "fast-model",
+              "options": [
+                {
+                  "value": "default-model",
+                  "name": "default-model"
+                },
+                {
+                  "value": "fast-model",
+                  "name": "fast-model"
+                },
+                {
+                  "value": "smart-model",
+                  "name": "smart-model"
+                },
+                {
+                  "value": "gpt-5.4",
+                  "name": "gpt-5.4"
+                },
+                {
+                  "value": "gpt-5.2",
+                  "name": "gpt-5.2"
+                }
+              ]
+            },
+            {
+              "id": "reasoning_effort",
+              "name": "Reasoning Effort",
+              "category": "thought_level",
+              "type": "select",
+              "currentValue": " high ",
+              "options": [
+                {
+                  "value": "low",
+                  "name": "Low"
+                },
+                {
+                  "value": "medium",
+                  "name": "Medium"
+                },
+                {
+                  "value": "high",
+                  "name": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "name": "Xhigh"
+                }
+              ]
+            }
+          ],
+          "session_options": {
+            "model": "fast-model"
+          }
+        }
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "old-owner",
+      "step": "old-show",
+      "exit": 0,
+      "cliStdout": {
+        "schema": "acpx.session.v1",
+        "acpxRecordId": "<REDACTED>",
+        "acpSessionId": "<REDACTED>",
+        "agentCommand": "<REDACTED>",
+        "agentArgv": "<REDACTED>",
+        "cwd": "<REDACTED>",
+        "name": "queued",
+        "createdAt": "2026-11-19T04:46:58.592Z",
+        "lastUsedAt": "2026-11-19T04:46:58.592Z",
+        "lastSeq": 0,
+        "eventLog": "<REDACTED>",
+        "closed": false,
+        "agentStartedAt": "2026-11-19T04:46:55.480Z",
+        "lastAgentExitCode": null,
+        "lastAgentExitSignal": null,
+        "lastAgentExitAt": "2026-11-19T04:46:59.879Z",
+        "lastAgentDisconnectReason": "connection_close",
+        "protocolVersion": 1,
+        "agentCapabilities": {
+          "promptCapabilities": {
+            "image": true,
+            "audio": true,
+            "embeddedContext": true
+          }
+        },
+        "title": null,
+        "messages": "<REDACTED>",
+        "updated_at": "2026-11-19T04:46:58.592Z",
+        "cumulative_token_usage": {},
+        "request_token_usage": {},
+        "acpx": {
+          "session_origin": "new",
+          "available_model_names": {
+            "default-model": "default-model",
+            "fast-model": "fast-model",
+            "smart-model": "smart-model",
+            "gpt-5.4": "gpt-5.4",
+            "gpt-5.2": "gpt-5.2"
+          },
+          "current_model_id": "default-model",
+          "available_models": [
+            "default-model",
+            "fast-model",
+            "smart-model",
+            "gpt-5.4",
+            "gpt-5.2"
+          ],
+          "model_control": "config_option",
+          "config_options": [
+            {
+              "id": "mode",
+              "name": "Session Mode",
+              "category": "mode",
+              "type": "select",
+              "currentValue": "auto",
+              "options": [
+                {
+                  "value": "read-only",
+                  "name": "Read Only"
+                },
+                {
+                  "value": "auto",
+                  "name": "Default"
+                },
+                {
+                  "value": "full-access",
+                  "name": "Full Access"
+                },
+                {
+                  "value": "plan",
+                  "name": "Plan"
+                },
+                {
+                  "value": "default",
+                  "name": "Default"
+                }
+              ]
+            },
+            {
+              "id": "model",
+              "name": "Model",
+              "category": "model",
+              "type": "select",
+              "currentValue": "default-model",
+              "options": [
+                {
+                  "value": "default-model",
+                  "name": "default-model"
+                },
+                {
+                  "value": "fast-model",
+                  "name": "fast-model"
+                },
+                {
+                  "value": "smart-model",
+                  "name": "smart-model"
+                },
+                {
+                  "value": "gpt-5.4",
+                  "name": "gpt-5.4"
+                },
+                {
+                  "value": "gpt-5.2",
+                  "name": "gpt-5.2"
+                }
+              ]
+            },
+            {
+              "id": "reasoning_effort",
+              "name": "Reasoning Effort",
+              "category": "thought_level",
+              "type": "select",
+              "currentValue": "medium",
+              "options": [
+                {
+                  "value": "low",
+                  "name": "Low"
+                },
+                {
+                  "value": "medium",
+                  "name": "Medium"
+                },
+                {
+                  "value": "high",
+                  "name": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "name": "Xhigh"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "old-owner",
+      "step": "old-background-prompt",
+      "exit": 0,
+      "cliStdout": {
+        "action": "prompt_queued",
+        "acpxRecordId": "<REDACTED>",
+        "requestId": "<REDACTED>"
+      },
+      "cliStderr": "[acpx] session queued (<REDACTED_UUID>) · <SANDBOX>\\project · agent starting"
+    },
+    {
+      "scenario": "old-owner",
+      "step": "new-reject-padded",
+      "exit": 1,
+      "cliStdout": {
+        "jsonrpc": "2.0",
+        "id": null,
+        "error": {
+          "code": -32603,
+          "message": "Running queue owner cannot preserve this CLI config value; wait for the older owner to exit, then retry without closing the session. Closing ends the session and requires creating a new one.",
+          "data": {
+            "acpxCode": "RUNTIME",
+            "detailCode": "QUEUE_CLI_CONFIG_OWNER_UNSUPPORTED",
+            "origin": "queue",
+            "retryable": false,
+            "sessionId": "<REDACTED>"
+          }
+        }
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "old-owner",
+      "step": "new-legacy-plain",
+      "exit": 0,
+      "cliStdout": {
+        "action": "config_set",
+        "configId": "reasoning_effort",
+        "value": "high",
+        "resumed": false,
+        "configOptions": [
+          {
+            "id": "mode",
+            "name": "Session Mode",
+            "category": "mode",
+            "type": "select",
+            "currentValue": "auto",
+            "options": [
+              {
+                "value": "read-only",
+                "name": "Read Only"
+              },
+              {
+                "value": "auto",
+                "name": "Default"
+              },
+              {
+                "value": "full-access",
+                "name": "Full Access"
+              },
+              {
+                "value": "plan",
+                "name": "Plan"
+              },
+              {
+                "value": "default",
+                "name": "Default"
+              }
+            ]
+          },
+          {
+            "id": "model",
+            "name": "Model",
+            "category": "model",
+            "type": "select",
+            "currentValue": "default-model",
+            "options": [
+              {
+                "value": "default-model",
+                "name": "default-model"
+              },
+              {
+                "value": "fast-model",
+                "name": "fast-model"
+              },
+              {
+                "value": "smart-model",
+                "name": "smart-model"
+              },
+              {
+                "value": "gpt-5.4",
+                "name": "gpt-5.4"
+              },
+              {
+                "value": "gpt-5.2",
+                "name": "gpt-5.2"
+              }
+            ]
+          },
+          {
+            "id": "reasoning_effort",
+            "name": "Reasoning Effort",
+            "category": "thought_level",
+            "type": "select",
+            "currentValue": "high",
+            "options": [
+              {
+                "value": "low",
+                "name": "Low"
+              },
+              {
+                "value": "medium",
+                "name": "Medium"
+              },
+              {
+                "value": "high",
+                "name": "High"
+              },
+              {
+                "value": "xhigh",
+                "name": "Xhigh"
+              }
+            ]
+          }
+        ],
+        "acpxRecordId": "<REDACTED>",
+        "acpxSessionId": "<REDACTED>"
+      },
+      "cliStderr": ""
+    },
+    {
+      "scenario": "old-owner",
+      "step": "new-show",
+      "exit": 0,
+      "cliStdout": {
+        "schema": "acpx.session.v1",
+        "acpxRecordId": "<REDACTED>",
+        "acpSessionId": "<REDACTED>",
+        "agentCommand": "<REDACTED>",
+        "agentArgv": "<REDACTED>",
+        "cwd": "<REDACTED>",
+        "name": "queued",
+        "createdAt": "2026-11-19T04:46:58.592Z",
+        "lastUsedAt": "2026-11-19T04:47:09.068Z",
+        "lastSeq": 10,
+        "lastRequestId": "<REDACTED>",
+        "eventLog": "<REDACTED>",
+        "closed": false,
+        "pid": "<REDACTED>",
+        "agentStartedAt": "2026-11-19T04:47:05.898Z",
+        "lastPromptAt": "2026-11-19T04:47:07.532Z",
+        "protocolVersion": 1,
+        "agentCapabilities": {
+          "promptCapabilities": {
+            "image": true,
+            "audio": true,
+            "embeddedContext": true
+          }
+        },
+        "title": null,
+        "messages": "<REDACTED>",
+        "updated_at": "2026-11-19T04:47:09.059Z",
+        "cumulative_token_usage": {},
+        "request_token_usage": {},
+        "acpx": {
+          "session_origin": "new",
+          "desired_config_options": {
+            "reasoning_effort": "high"
+          },
+          "available_model_names": {
+            "default-model": "default-model",
+            "fast-model": "fast-model",
+            "smart-model": "smart-model",
+            "gpt-5.4": "gpt-5.4",
+            "gpt-5.2": "gpt-5.2"
+          },
+          "current_model_id": "default-model",
+          "available_models": [
+            "default-model",
+            "fast-model",
+            "smart-model",
+            "gpt-5.4",
+            "gpt-5.2"
+          ],
+          "model_control": "config_option",
+          "config_options": [
+            {
+              "id": "mode",
+              "name": "Session Mode",
+              "category": "mode",
+              "type": "select",
+              "currentValue": "auto",
+              "options": [
+                {
+                  "value": "read-only",
+                  "name": "Read Only"
+                },
+                {
+                  "value": "auto",
+                  "name": "Default"
+                },
+                {
+                  "value": "full-access",
+                  "name": "Full Access"
+                },
+                {
+                  "value": "plan",
+                  "name": "Plan"
+                },
+                {
+                  "value": "default",
+                  "name": "Default"
+                }
+              ]
+            },
+            {
+              "id": "model",
+              "name": "Model",
+              "category": "model",
+              "type": "select",
+              "currentValue": "default-model",
+              "options": [
+                {
+                  "value": "default-model",
+                  "name": "default-model"
+                },
+                {
+                  "value": "fast-model",
+                  "name": "fast-model"
+                },
+                {
+                  "value": "smart-model",
+                  "name": "smart-model"
+                },
+                {
+                  "value": "gpt-5.4",
+                  "name": "gpt-5.4"
+                },
+                {
+                  "value": "gpt-5.2",
+                  "name": "gpt-5.2"
+                }
+              ]
+            },
+            {
+              "id": "reasoning_effort",
+              "name": "Reasoning Effort",
+              "category": "thought_level",
+              "type": "select",
+              "currentValue": "high",
+              "options": [
+                {
+                  "value": "low",
+                  "name": "Low"
+                },
+                {
+                  "value": "medium",
+                  "name": "Medium"
+                },
+                {
+                  "value": "high",
+                  "name": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "name": "Xhigh"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "cliStderr": ""
+    }
+  ],
+  "limits": [
+    "Synthetic ACP peer only",
+    "The captured responses are CLI JSON, not raw ACP wire frames",
+    "Actual provider execution and maintainer acceptance remain unverified"
+  ]
+}
